@@ -1460,6 +1460,360 @@ def render_diff_arrow_html(value_a, value_b, unit="", label="", fmt="{:.2f}"):
     """
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# FARMER-FRIENDLY INFERENCE ENGINE
+# Multilingual (English / Hindi / Telugu) · Band-aware · Context-aware
+# ══════════════════════════════════════════════════════════════════════════════
+REFERENCES = {
+    "co2_per_km_car":     0.244,
+    "co2_per_tree_year":  60.0,
+    "co2_per_l_diesel":   2.69,
+    "co2_per_lpg_cyl":    43.0,
+    "rice_gwp_low":       3000,
+    "rice_gwp_high":      7000,
+    "ch4_flooded_low":    200,
+    "ch4_flooded_high":   500,
+    "no3_who_limit":      50.0,
+    "no3_bis_limit":      45.0,
+    "po4_algae_thresh":   0.1,
+    "urea_price_inr_kg":  6.5,
+    "farm_wage_inr_day":  350,
+    "ccts_price_low":     600,
+    "ccts_price_high":    900,
+}
+
+SOURCES = {
+    "epa":           ("EPA GHG Equivalencies Calculator (2024)",
+                      "https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator-calculations-and-references"),
+    "ipcc_ar6":      ("IPCC AR6 Working Group I (2021)",
+                      "https://www.ipcc.ch/report/ar6/wg1/"),
+    "ipcc_2019":     ("IPCC 2019 Refinement (N₂O EF)",
+                      "https://www.ipcc-nggip.iges.or.jp/public/2019rf/"),
+    "ipcc_rice":     ("IPCC – Methane Emissions from Rice Cultivation",
+                      "https://www.ipcc-nggip.iges.or.jp/public/gl/guidelin/ch4ref5.pdf"),
+    "frontiers22":   ("Frontiers in Sustainable Food Systems (2022)",
+                      "https://www.frontiersin.org/journals/sustainable-food-systems/articles/10.3389/fsufs.2022.868479/full"),
+    "who_no3":       ("WHO Nitrate/Nitrite Drinking-water Fact Sheet (2022)",
+                      "https://cdn.who.int/media/docs/default-source/wash-documents/water-safety-and-quality/chemical-fact-sheets-2022/nitrate-and-nitrite-fact-sheet-2022.pdf"),
+    "bis":           ("BIS IS 10500:2012 – Indian Drinking Water Standard",
+                      "https://www.bis.gov.in/"),
+    "gold_awm":      ("Gold Standard – AWD Methane Reduction Methodology",
+                      "https://globalgoals.goldstandard.org/standards/437_V1.0_LUF_AGR_Methane-emission-reduction-by-AWM-practice-in-rice-cultivation.pdf"),
+    "who_air":       ("WHO Global Air Quality Guidelines (2021)",
+                      "https://www.who.int/publications/i/item/9789240034228"),
+    "usda":          ("USDA Forest Service – Urban Tree Database",
+                      "https://www.fs.usda.gov/treesearch/pubs/52933"),
+    "moefcc_ccts":   ("MoEFCC / BEE – Carbon Credit Trading Scheme (2024)",
+                      "https://moef.gov.in/"),
+    "verra":         ("Verra VM0042 – Improved Agricultural Land Management",
+                      "https://verra.org/methodologies/vm0042-methodology-for-improved-agricultural-land-management-v2-0/"),
+    "icar_inm":      ("ICAR – Integrated Nutrient Management",
+                      "https://icar.org.in/"),
+    "salca":         ("SALCA – Swiss Agricultural LCA Methodology",
+                      "https://www.agroscope.admin.ch/agroscope/en/home/topics/environment-resources/life-cycle-assessment/salca.html"),
+}
+
+
+def cite(*keys):
+    """Render one or more clickable reference pills."""
+    pills = []
+    for k in keys:
+        name, url = SOURCES.get(k, (k, "#"))
+        short = k.replace("_", " ").upper().split()[0]
+        pills.append(
+            f'<a href="{url}" target="_blank" rel="noopener" title="{name}" '
+            f'style="display:inline-flex;align-items:center;gap:0.15rem;'
+            f'background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;'
+            f'padding:0.05rem 0.5rem;border-radius:999px;font-size:0.7rem;'
+            f'font-weight:600;text-decoration:none;margin:0 0.15rem;'
+            f'vertical-align:middle;white-space:nowrap;">↗ {short}</a>'
+        )
+    return "".join(pills)
+
+
+def _band(value, low, high):
+    if value < low:
+        return ("low", "🟢", "#16a34a")
+    if value > high:
+        return ("high", "🔴", "#ef4444")
+    return ("mid", "🟡", "#f59e0b")
+
+
+def _t(en, hi, te, lang):
+    return {"en": en, "hi": hi, "te": te}[lang]
+
+
+def build_inference_card(domain, value, ctx=None, lang="en"):
+    """Return HTML for a band-aware, context-aware, multilingual inference card."""
+    R = REFERENCES
+    ctx = ctx or {}
+    title, paragraph, refs, color, emoji = "", "", "", "#0ea5e9", "💡"
+
+    if domain == "gwp_total":
+        km = value / R["co2_per_km_car"]
+        trees = value / R["co2_per_tree_year"]
+        band, emoji, color = _band(value, R["rice_gwp_low"], R["rice_gwp_high"])
+        title = _t("🌍 Global Warming", "🌍 जलवायु प्रभाव (Global Warming)", "🌍 వాతావరణ ప్రభావం (Global Warming)", lang)
+        irrig = ctx.get("irrigation", "")
+        amendments_used = ctx.get("amendments_used", False)
+        if band == "low":
+            paragraph = _t(
+                f"Excellent — your <b>{value:,.0f} kg CO₂-eq/ha</b> is <b>below</b> the typical 3,000–7,000 kg/ha range for irrigated rice, equivalent to driving only <b>~{km:,.0f} km</b> or what <b>~{trees:.0f} trees</b> absorb in a year. Keep this low-input strategy and consider documenting it for CCTS soil-carbon credits.",
+                f"बहुत अच्छा — आपका <b>{value:,.0f} kg CO₂-eq/ha</b> सिंचित धान के सामान्य 3,000–7,000 kg/ha स्तर से <b>कम</b> है, यानी कार से सिर्फ़ <b>~{km:,.0f} किमी</b> चलाने जितना या <b>~{trees:.0f} पेड़</b> एक साल में जितना सोखते हैं। इस कम-इनपुट तरीक़े को बनाए रखें और CCTS soil-carbon credits के लिए दस्तावेज़ बनाएँ।",
+                f"అద్భుతం — మీ <b>{value:,.0f} kg CO₂-eq/ha</b> సాధారణ 3,000–7,000 kg/ha కంటే <b>తక్కువ</b>, అంటే కేవలం <b>~{km:,.0f} కి.మీ.</b> కారు నడిపినంత లేదా <b>~{trees:.0f} చెట్లు</b> ఒక ఏడాదిలో పీల్చుకునేంత. ఈ low-input విధానాన్ని కొనసాగించి CCTS soil-carbon credits కోసం రికార్డ్ చేయండి.",
+                lang)
+        elif band == "mid":
+            tip_en = "switching to <b>AWD irrigation</b> cuts CH₄ by 30–70%, and splitting urea into 3 doses cuts N₂O ~20%"
+            tip_hi = "<b>AWD सिंचाई</b> से CH₄ 30–70% कम होता है, और यूरिया को 3 बार में देने से N₂O ~20% कम होता है"
+            tip_te = "<b>AWD పద్ధతి</b> తో CH₄ 30–70% తగ్గుతుంది, యూరియాను 3 సార్లు వేస్తే N₂O ~20% తగ్గుతుంది"
+            if irrig == "Alternate Wetting and Drying":
+                tip_en = "you're already using AWD — next gains come from neem-coated urea and 5 t/ha FYM substitution"
+                tip_hi = "आप पहले से AWD कर रहे हैं — अगला लाभ neem-coated urea और 5 t/ha FYM से मिलेगा"
+                tip_te = "మీరు ఇప్పటికే AWD వాడుతున్నారు — తదుపరి మెరుగు neem-coated urea మరియు 5 t/ha FYM వల్ల వస్తుంది"
+            paragraph = _t(
+                f"Your <b>{value:,.0f} kg CO₂-eq/ha</b> sits in the <b>middle</b> of the typical 3,000–7,000 kg/ha range — equivalent to driving <b>~{km:,.0f} km</b>. There's clear room to improve: {tip_en}.",
+                f"आपका <b>{value:,.0f} kg CO₂-eq/ha</b> सामान्य 3,000–7,000 kg/ha स्तर के <b>बीच</b> में है — कार से <b>~{km:,.0f} किमी</b> चलाने जितना। सुधार की गुंजाइश है: {tip_hi}।",
+                f"మీ <b>{value:,.0f} kg CO₂-eq/ha</b> సాధారణ 3,000–7,000 kg/ha రేంజ్ <b>మధ్యలో</b> ఉంది — <b>~{km:,.0f} కి.మీ.</b> కారు నడిపినంత. మెరుగుపరచటానికి అవకాశం: {tip_te}.",
+                lang)
+        else:
+            urgent_en = "adopt <b>AWD irrigation</b> (cuts CH₄ 30–70%), split urea into 3 doses, and substitute 20% synthetic N with FYM/compost"
+            urgent_hi = "<b>AWD सिंचाई</b> अपनाएँ (CH₄ 30–70% कम), यूरिया को 3 बार में दें, और 20% सिंथेटिक N को FYM/compost से बदलें"
+            urgent_te = "<b>AWD పద్ధతి</b> అవలంబించండి (CH₄ 30–70% తగ్గింపు), యూరియాను 3 సార్లు వేయండి, 20% synthetic N ను FYM/compost తో భర్తీ చేయండి"
+            if not amendments_used:
+                urgent_en += "; <b>start with 5 t/ha FYM</b> — biggest win for both emissions and soil carbon credits"
+                urgent_hi += "; <b>5 t/ha FYM से शुरू करें</b> — उत्सर्जन और soil carbon credits दोनों के लिए सबसे बड़ा फ़ायदा"
+                urgent_te += "; <b>5 t/ha FYM తో మొదలుపెట్టండి</b> — ఉద్గారాలు మరియు soil carbon credits రెండింటికీ అతిపెద్ద లాభం"
+            paragraph = _t(
+                f"⚠️ Your <b>{value:,.0f} kg CO₂-eq/ha</b> is <b>above</b> the typical 3,000–7,000 kg/ha range — equivalent to driving <b>~{km:,.0f} km</b>. Priority actions: {urgent_en}.",
+                f"⚠️ आपका <b>{value:,.0f} kg CO₂-eq/ha</b> सामान्य 3,000–7,000 kg/ha स्तर से <b>ऊपर</b> है — कार से <b>~{km:,.0f} किमी</b> चलाने जितना। प्राथमिकता: {urgent_hi}।",
+                f"⚠️ మీ <b>{value:,.0f} kg CO₂-eq/ha</b> సాధారణ 3,000–7,000 kg/ha రేంజ్‌ను <b>మించింది</b> — <b>~{km:,.0f} కి.మీ.</b> కారు నడిపినంత. ప్రాధాన్యత: {urgent_te}.",
+                lang)
+        refs = cite("epa", "frontiers22", "ipcc_ar6", "gold_awm")
+
+    elif domain == "ch4":
+        co2eq = value * 27.9
+        band, emoji, color = _band(value, R["ch4_flooded_low"] * 0.4, R["ch4_flooded_high"] * 0.7)
+        title = _t("🔥 Methane (CH₄)", "🔥 मीथेन (CH₄)", "🔥 మీథేన్ (CH₄)", lang)
+        irrig = ctx.get("irrigation", "")
+        if irrig == "Alternate Wetting and Drying":
+            extra_en = "You're already using AWD — fine-tune drainage timing and avoid incorporating fresh straw under flood."
+            extra_hi = "आप AWD कर रहे हैं — drainage समय सुधारें और ताज़ा पुआल को पानी में न मिलाएँ।"
+            extra_te = "మీరు AWD వాడుతున్నారు — drainage timing ను చక్కబెట్టండి, ఫ్రెష్ గడ్డిని నీటిలో కలపొద్దు."
+        elif irrig == "Rainfed":
+            extra_en = "Rainfed systems already have low CH₄; focus on N management instead."
+            extra_hi = "Rainfed में CH₄ पहले से कम है; ध्यान N प्रबंधन पर दें।"
+            extra_te = "Rainfed లో CH₄ తక్కువ; దృష్టి N management పై పెట్టండి."
+        else:
+            extra_en = "Practising <b>AWD</b> — draining the field 2–3 times mid-season — is the single biggest CH₄ reducer."
+            extra_hi = "<b>AWD</b> अपनाना — मध्य-सीज़न में 2–3 बार पानी निकालना — CH₄ कम करने का सबसे बड़ा तरीक़ा है।"
+            extra_te = "<b>AWD</b> పద్ధతి — mid-season లో 2–3 సార్లు నీరు తీసేయడం — CH₄ తగ్గించడంలో అతిపెద్ద చర్య."
+        if band == "low":
+            paragraph = _t(
+                f"🟢 Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — well below the IPCC default of 200–500 kg/ha for fully-flooded paddies. {extra_en}",
+                f"🟢 आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha से बहुत कम। {extra_hi}",
+                f"🟢 మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha కంటే చాలా తక్కువ. {extra_te}",
+                lang)
+        elif band == "mid":
+            paragraph = _t(
+                f"Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq), within the IPCC default 200–500 kg/ha range for flooded paddies. {extra_en}",
+                f"आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) निकल रहा है, जो IPCC default 200–500 kg/ha के बीच है। {extra_hi}",
+                f"మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) విడుదలవుతోంది, IPCC default 200–500 kg/ha రేంజ్‌లో. {extra_te}",
+                lang)
+        else:
+            paragraph = _t(
+                f"⚠️ Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — at the upper end of the IPCC 200–500 kg/ha range. {extra_en} Expect a 30–70% cut on adoption.",
+                f"⚠️ आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 200–500 kg/ha की ऊँची सीमा पर। {extra_hi} 30–70% तक कमी संभव।",
+                f"⚠️ మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 200–500 kg/ha గరిష్ఠ స్థాయిలో. {extra_te} అమలుతో 30–70% తగ్గింపు సాధ్యం.",
+                lang)
+        refs = cite("ipcc_rice", "gold_awm", "ipcc_ar6")
+
+    elif domain == "n2o":
+        co2eq = value * 273
+        band, emoji, color = _band(value, 1.0, 3.0)
+        title = _t("⚡ Nitrous Oxide (N₂O)", "⚡ नाइट्रस ऑक्साइड (N₂O)", "⚡ నైట్రస్ ఆక్సైడ్ (N₂O)", lang)
+        n_high = ctx.get("synthetic_n", 0) > 145
+        action_en = "Apply N in <b>3 splits</b> (basal + tillering + panicle initiation) and use neem-coated urea to cut this by ~20%"
+        action_hi = "N को <b>3 बार में</b> दें (basal + tillering + panicle initiation) और neem-coated urea से ~20% कमी करें"
+        action_te = "N ను <b>3 splits</b> లో (basal + tillering + panicle initiation) వేయండి, neem-coated urea తో ~20% తగ్గించండి"
+        if n_high:
+            action_en = "Your N is high (>145 kg/ha) — first cut N to ~135 kg/ha, then split into 3 doses with neem-coated urea"
+            action_hi = "आपका N ज़्यादा है (>145 kg/ha) — पहले N घटाकर ~135 kg/ha करें, फिर 3 बार में neem-coated urea से दें"
+            action_te = "మీ N ఎక్కువగా ఉంది (>145 kg/ha) — ముందు N ను ~135 kg/ha కు తగ్గించి, 3 splits లో neem-coated urea తో వేయండి"
+        paragraph = _t(
+            f"{emoji} Your N₂O emission of <b>{value:,.3f} kg/ha</b> equals <b>{co2eq:,.1f} kg CO₂-eq</b> (N₂O is 273× stronger than CO₂). IPCC default: ~1% of applied N is lost as N₂O. {action_en}.",
+            f"{emoji} आपका N₂O उत्सर्जन <b>{value:,.3f} kg/ha</b> = <b>{co2eq:,.1f} kg CO₂-eq</b> (N₂O CO₂ से 273× ज़्यादा शक्तिशाली)। IPCC default: लगाए गए N का ~1% N₂O के रूप में निकलता है। {action_hi}।",
+            f"{emoji} మీ N₂O ఉద్గారం <b>{value:,.3f} kg/ha</b> = <b>{co2eq:,.1f} kg CO₂-eq</b> (N₂O అనేది CO₂ కంటే 273× శక్తివంతం). IPCC default: వేసిన N లో ~1% N₂O గా పోతుంది. {action_te}.",
+            lang)
+        refs = cite("ipcc_ar6", "ipcc_2019")
+
+    elif domain == "no3":
+        mg_per_l = value / 1.0
+        band, emoji, color = _band(mg_per_l, R["no3_bis_limit"] * 0.5, R["no3_bis_limit"])
+        title = _t("💦 Nitrate (NO₃⁻)", "💦 नाइट्रेट (NO₃⁻)", "💦 నైట్రేట్ (NO₃⁻)", lang)
+        if band == "high":
+            warn_en = "⚠️ Above this risks <i>methaemoglobinaemia (\"blue-baby\")</i> in infants drinking groundwater nearby."
+            warn_hi = "⚠️ इससे ऊपर पास के groundwater पीने वाले शिशुओं में <i>methaemoglobinaemia (\"blue-baby\")</i> का ख़तरा।"
+            warn_te = "⚠️ ఇంతకన్నా ఎక్కువైతే చుట్టుపక్కల groundwater తాగే శిశువులకు <i>methaemoglobinaemia (\"blue-baby\")</i> ప్రమాదం."
+        else:
+            warn_en = "This stays below WHO/BIS limits, but cumulative N losses still reduce yield efficiency."
+            warn_hi = "यह WHO/BIS सीमा से नीचे है, फिर भी कुल N नुक़सान yield efficiency कम करता है।"
+            warn_te = "ఇది WHO/BIS పరిమితి కంటే తక్కువ, అయినా మొత్తం N నష్టం yield efficiency ను తగ్గిస్తుంది."
+        paragraph = _t(
+            f"{emoji} Approximately <b>{mg_per_l:.1f} mg/L</b> could leach into local groundwater (1,000 m³/ha runoff proxy). WHO drinking-water limit: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_en} Avoid topdressing N before heavy rain and maintain bunds & vegetative buffers.",
+            f"{emoji} लगभग <b>{mg_per_l:.1f} mg/L</b> स्थानीय groundwater में जा सकता है (1,000 m³/ha runoff अनुमान)। WHO सीमा: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>। {warn_hi} भारी बारिश से पहले N न डालें और मेड़ व वनस्पति buffer बनाएँ।",
+            f"{emoji} సుమారు <b>{mg_per_l:.1f} mg/L</b> స్థానిక groundwater లోకి వెళ్ళవచ్చు (1,000 m³/ha runoff అంచనా). WHO పరిమితి: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_te} భారీ వర్షానికి ముందు N వేయొద్దు, బండ్లు మరియు vegetative buffers నిర్వహించండి.",
+            lang)
+        refs = cite("who_no3", "bis")
+
+    elif domain == "nh3":
+        band, emoji, color = _band(value, 5, 15)
+        title = _t("🌬️ Ammonia (NH₃)", "🌬️ अमोनिया (NH₃)", "🌬️ అమ్మోనియా (NH₃)", lang)
+        paragraph = _t(
+            f"{emoji} Your <b>{value:,.2f} kg NH₃/ha</b> volatilises into air, contributing to <b>PM₂.₅ formation</b> (linked to respiratory illness) and acidifies soil over time, reducing nutrient availability. Incorporate urea within 24 h, avoid hot/windy mid-day spreading, and use neem-coated urea to cut NH₃ loss by 10–15%.",
+            f"{emoji} आपका <b>{value:,.2f} kg NH₃/ha</b> हवा में मिलकर <b>PM₂.₅</b> बनाता है (श्वसन रोगों से जुड़ा) और मिट्टी को धीरे-धीरे अम्लीय करता है, पोषक उपलब्धता घटाता है। यूरिया 24 घंटे में मिट्टी में मिलाएँ, गर्म/तेज़ हवा वाले दिनों में न डालें, और neem-coated urea से NH₃ नुक़सान 10–15% कम करें।",
+            f"{emoji} మీ <b>{value:,.2f} kg NH₃/ha</b> గాలిలో కలిసి <b>PM₂.₅</b> ఏర్పడటానికి దారితీస్తుంది (శ్వాసకోశ వ్యాధులతో సంబంధం), మట్టిని క్రమంగా అమ్లీయం చేస్తుంది, పోషక లభ్యత తగ్గుతుంది. యూరియాను 24 గంటల్లో మట్టిలో కలపండి, వేడి/గాలి ఎక్కువ ఉన్న middays లో వేయొద్దు, neem-coated urea తో NH₃ నష్టం 10–15% తగ్గించండి.",
+            lang)
+        refs = cite("who_air", "salca")
+
+    elif domain == "po4":
+        band, emoji, color = _band(value, 0.05, 0.2)
+        title = _t("💧 Phosphate (PO₄³⁻)", "💧 फॉस्फेट (PO₄³⁻)", "💧 ఫాస్ఫేట్ (PO₄³⁻)", lang)
+        paragraph = _t(
+            f"{emoji} Your <b>{value:,.3f} kg PO₄/ha</b> runoff fuels <b>algal blooms</b> in ponds and irrigation tanks once concentrations exceed <b>0.1 mg P/L</b>, killing fish through oxygen depletion. Apply DAP only at recommended rates with band placement, never just before predicted rainfall.",
+            f"{emoji} आपका <b>{value:,.3f} kg PO₄/ha</b> runoff तालाबों में <b>algal blooms</b> पैदा करता है जब P >0.1 mg/L हो — मछलियाँ ऑक्सीजन की कमी से मरती हैं। DAP केवल अनुशंसित मात्रा में, band placement से डालें, बारिश से पहले कभी नहीं।",
+            f"{emoji} మీ <b>{value:,.3f} kg PO₄/ha</b> runoff చెరువుల్లో <b>algal blooms</b> కు దారితీస్తుంది (P >0.1 mg/L వద్ద) — చేపలు ఆక్సిజన్ లేక చనిపోతాయి. DAP ను సిఫార్సు చేసిన మోతాదులో band placement తో మాత్రమే వేయండి, వర్షానికి ముందు ఎప్పుడూ వేయొద్దు.",
+            lang)
+        refs = cite("who_no3", "salca")
+
+    elif domain == "ecotox":
+        band, emoji, color = _band(value, 5_000, 20_000)
+        title = _t("☠️ Ecotoxicity", "☠️ इको-विषाक्तता (Ecotoxicity)", "☠️ ఎకో-టాక్సిసిటీ (Ecotoxicity)", lang)
+        zn = ctx.get("zinc", 0)
+        zn_note_en = f" Your Zn input is {zn:.0f} kg/ha — " + ("at safe levels." if zn <= 20 else "<b>above 20 kg/ha</b>; reduce unless soil-test confirms deficiency.")
+        zn_note_hi = f" आपका Zn input {zn:.0f} kg/ha है — " + ("सुरक्षित स्तर पर।" if zn <= 20 else "<b>20 kg/ha से ऊपर</b>; soil-test से कमी की पुष्टि न हो तो घटाएँ।")
+        zn_note_te = f" మీ Zn input {zn:.0f} kg/ha — " + ("సురక్షిత స్థాయిలో." if zn <= 20 else "<b>20 kg/ha కంటే ఎక్కువ</b>; soil-test లో deficiency నిర్ధారిస్తే తప్ప తగ్గించండి.")
+        paragraph = _t(
+            f"{emoji} Your soil ecotoxicity score of <b>{value:,.0f} CTUe</b> is driven mostly by Zinc — Zn alone is 612.9 CTUe/kg vs only 2.7–5.2 for N, P, K.{zn_note_en} Split Zn applications with FYM rather than concentrated dose.",
+            f"{emoji} आपका मिट्टी ecotoxicity स्कोर <b>{value:,.0f} CTUe</b> मुख्यतः Zinc से आता है — Zn 612.9 CTUe/kg है vs N, P, K सिर्फ़ 2.7–5.2।{zn_note_hi} Zn को एक साथ नहीं, FYM के साथ split करके दें।",
+            f"{emoji} మీ మట్టి ecotoxicity స్కోర్ <b>{value:,.0f} CTUe</b> ముఖ్యంగా Zinc వల్ల — Zn అనేది 612.9 CTUe/kg vs N, P, K కేవలం 2.7–5.2.{zn_note_te} Zn ను ఒకేసారి కాకుండా FYM తో splits లో వేయండి.",
+            lang)
+        refs = cite("salca", "icar_inm")
+
+    elif domain == "credits":
+        inr_low = value * R["ccts_price_low"]
+        inr_high = value * R["ccts_price_high"]
+        bags = inr_high / (R["urea_price_inr_kg"] * 45)
+        wages = inr_high / R["farm_wage_inr_day"]
+        band, emoji, color = _band(value, 0.3, 1.0)
+        title = _t("💎 Carbon Credit Potential", "💎 कार्बन क्रेडिट संभावना", "💎 కార్బన్ క్రెడిట్ సామర్థ్యం", lang)
+        if band == "low":
+            tone_en = "is on the lower side. To reach a meaningful credit volume, raise FYM to ~10 t/ha and add 1.5–2 t/ha compost"
+            tone_hi = "कम है। meaningful credits के लिए FYM बढ़ाकर ~10 t/ha करें और 1.5–2 t/ha compost जोड़ें"
+            tone_te = "తక్కువగా ఉంది. meaningful credits కోసం FYM ను ~10 t/ha కు పెంచి, 1.5–2 t/ha compost జోడించండి"
+        elif band == "mid":
+            tone_en = "is moderate. Maintain a 3-season log of FYM/compost rates with photos and soil-test data"
+            tone_hi = "मध्यम है। 3 सीज़न का FYM/compost log, फ़ोटो और soil-test data रखें"
+            tone_te = "మధ్యస్థంగా ఉంది. 3 సీజన్ల FYM/compost log, ఫొటోలు, soil-test data నిర్వహించండి"
+        else:
+            tone_en = "is strong. Register now with a verified aggregator (NCDEX / Verra / Gold Standard) to monetise this"
+            tone_hi = "बहुत अच्छी है। अभी verified aggregator (NCDEX / Verra / Gold Standard) के साथ register करें"
+            tone_te = "చాలా బలంగా ఉంది. వెంటనే verified aggregator (NCDEX / Verra / Gold Standard) తో register చేసుకోండి"
+        paragraph = _t(
+            f"{emoji} Your potential of <b>{value:.3f} t CO₂-eq/ha</b> translates to <b>₹{inr_low:,.0f}–₹{inr_high:,.0f}/ha</b> at the CCTS price band of ₹600–₹900/t — equivalent to <b>~{bags:.1f} bags of urea</b> or <b>~{wages:.0f} days of farm wages</b>. This {tone_en}.",
+            f"{emoji} आपकी संभावना <b>{value:.3f} t CO₂-eq/ha</b> = <b>₹{inr_low:,.0f}–₹{inr_high:,.0f}/ha</b> (CCTS दर ₹600–₹900/t) — यानी <b>~{bags:.1f} bags यूरिया</b> या <b>~{wages:.0f} दिन की मज़दूरी</b>। यह {tone_hi}।",
+            f"{emoji} మీ సామర్థ్యం <b>{value:.3f} t CO₂-eq/ha</b> = <b>₹{inr_low:,.0f}–₹{inr_high:,.0f}/ha</b> (CCTS ధర ₹600–₹900/t) — అంటే <b>~{bags:.1f} bags యూరియా</b> లేదా <b>~{wages:.0f} రోజుల వేతనం</b>. ఇది {tone_te}.",
+            lang)
+        refs = cite("moefcc_ccts", "verra", "gold_awm")
+
+    elif domain == "blend_savings":
+        gwp_saved = ctx.get("gwp_saved", 0)
+        cost_delta = ctx.get("cost_delta", 0)
+        alpha = ctx.get("alpha", 0)
+        title = _t("🌱 Blend Trade-off", "🌱 मिश्रण समझौता (Blend)", "🌱 Blend ట్రేడ్-ఆఫ్", lang)
+        if alpha == 0:
+            color, emoji = "#0ea5e9", "ℹ️"
+            paragraph = _t(
+                "Move the slider above 0% to see how shifting toward organic affects emissions, cost, and credit potential.",
+                "Slider को 0% से ऊपर ले जाएँ और देखें organic की ओर बढ़ने पर उत्सर्जन, लागत और credits कैसे बदलते हैं।",
+                "Slider ను 0% పైన పెంచి organic వైపు మారితే ఉద్గారాలు, ఖర్చు మరియు credits ఎలా మారతాయో చూడండి.",
+                lang)
+        elif gwp_saved <= 0:
+            color, emoji = "#f59e0b", "⚠️"
+            paragraph = _t(
+                f"⚠️ This blend <b>increases</b> GWP compared to fully conventional (Δ = +{abs(gwp_saved):,.1f} kg CO₂-eq/ha). Reduce organic input volumes or check for over-application of FYM (>15 t/ha drives high CH₄).",
+                f"⚠️ यह मिश्रण पूरी तरह conventional की तुलना में GWP <b>बढ़ाता</b> है (Δ = +{abs(gwp_saved):,.1f} kg CO₂-eq/ha)। organic input घटाएँ या FYM over-application जाँचें (>15 t/ha CH₄ बढ़ाता है)।",
+                f"⚠️ ఈ blend పూర్తి conventional తో పోలిస్తే GWP ను <b>పెంచుతుంది</b> (Δ = +{abs(gwp_saved):,.1f} kg CO₂-eq/ha). organic input తగ్గించండి లేదా FYM over-application తనిఖీ చేయండి (>15 t/ha వద్ద CH₄ పెరుగుతుంది).",
+                lang)
+        else:
+            km = gwp_saved / R["co2_per_km_car"]
+            trees = gwp_saved / R["co2_per_tree_year"]
+            ratio = cost_delta / gwp_saved if gwp_saved else 0
+            if cost_delta < 0:
+                color, emoji = "#16a34a", "🌟"
+                cost_phrase_en = f"AND <b>saves ₹{abs(cost_delta):,.0f}/ha</b>"
+                cost_phrase_hi = f"और <b>₹{abs(cost_delta):,.0f}/ha बचाता</b> है"
+                cost_phrase_te = f"మరియు <b>₹{abs(cost_delta):,.0f}/ha ఆదా</b> చేస్తుంది"
+            else:
+                color, emoji = "#16a34a", "🌱"
+                cost_phrase_en = f"at an extra <b>₹{cost_delta:,.0f}/ha</b> (₹{ratio:,.1f} per kg CO₂ avoided)"
+                cost_phrase_hi = f"<b>₹{cost_delta:,.0f}/ha अतिरिक्त</b> लागत पर (₹{ratio:,.1f}/kg CO₂)"
+                cost_phrase_te = f"<b>₹{cost_delta:,.0f}/ha అదనపు</b> ఖర్చుతో (₹{ratio:,.1f}/kg CO₂)"
+            paragraph = _t(
+                f"{emoji} This {int(alpha*100)}% organic blend avoids <b>{gwp_saved:,.1f} kg CO₂-eq/ha</b> ({km:,.0f} km of car driving, ~{trees:.1f} trees of yearly absorption) {cost_phrase_en}. Recover any cost gap via CCTS soil-carbon credits (Tab 3) or PM-PRANAM organic incentives.",
+                f"{emoji} यह {int(alpha*100)}% organic मिश्रण <b>{gwp_saved:,.1f} kg CO₂-eq/ha</b> बचाता है ({km:,.0f} किमी कार + ~{trees:.1f} पेड़/साल) {cost_phrase_hi}। लागत अंतर CCTS soil-carbon credits (Tab 3) या PM-PRANAM से वसूलें।",
+                f"{emoji} ఈ {int(alpha*100)}% organic blend <b>{gwp_saved:,.1f} kg CO₂-eq/ha</b> ఆదా చేస్తుంది ({km:,.0f} కి.మీ. కారు + ~{trees:.1f} చెట్లు/ఏడాది) {cost_phrase_te}. ఖర్చు తేడాను CCTS soil-carbon credits (Tab 3) లేదా PM-PRANAM తో recover చేయండి.",
+                lang)
+        refs = cite("epa", "moefcc_ccts", "frontiers22")
+
+    if not paragraph:
+        return ""
+
+    return f"""
+    <div style='background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+                border-left: 4px solid {color}; border-radius: 12px;
+                padding: 0.85rem 1.1rem; margin: 0.6rem 0;
+                box-shadow: 0 4px 10px rgba(15,23,42,0.05);'>
+        <div style='font-weight:700; color:#0f172a; margin-bottom:0.4rem; font-size:0.95rem;'>
+            {title}
+        </div>
+        <div style='color:#334155; font-size:0.88rem; line-height:1.65;'>
+            {paragraph}
+        </div>
+        <div style='margin-top:0.55rem; line-height:1.9;'>{refs}</div>
+    </div>
+    """
+
+
+def render_inference_section(cards, key_suffix=""):
+    """Render the bottom-of-tab inference section with English/Hindi/Telugu language tabs.
+
+    cards: list of (domain, value, ctx) tuples to render.
+    """
+    if not cards:
+        return
+    st.markdown("---")
+    st.markdown("### 📖 What This Means for Your Field · आपके खेत के लिए मतलब · మీ పొలానికి అర్థం")
+    lang_tabs = st.tabs(["🇬🇧 English", "🇮🇳 हिंदी", "🇮🇳 తెలుగు"])
+    for tab, lang in zip(lang_tabs, ["en", "hi", "te"]):
+        with tab:
+            for domain, value, ctx in cards:
+                html = build_inference_card(domain, value, ctx, lang)
+                if html:
+                    st.markdown(html, unsafe_allow_html=True)
+    render_references_expander()
+
+
+def render_references_expander():
+    with st.expander("📚 References & Data Sources"):
+        st.markdown("All inferences and benchmarks above are grounded in:")
+        for key, (name, url) in SOURCES.items():
+            if url == "#":
+                st.markdown(f"- **{name}**")
+            else:
+                st.markdown(f"- [{name}]({url})")
+        st.caption("Indicative interpretations only — local soil, climate, and water conditions may shift exact thresholds.")
+
+
 def calculate_soc_credits(manure, compost, buffer_pct):
     """Estimate soil-carbon-only credit potential from FYM and compost inputs."""
     c_to_co2 = 3.667
@@ -1521,9 +1875,10 @@ with st.container():
                     border: 1px solid rgba(16,185,129,0.25); overflow:hidden;'>
             <div style='position:absolute; top:-40px; right:-40px; width:160px; height:160px;
                         background: radial-gradient(circle, rgba(16,185,129,0.35), transparent 70%); border-radius:50%;'></div>
-            <h3 style='color:#064e3b; margin:0 0 0.5rem; position:relative;'>Climate Smart LCA Tool</h3>
-            <p style='color:#065f46; margin:0 0 1.25rem; position:relative;'>Enter your inputs and instantly compare the environmental cost of rice fertiliser choices.</p>
-            <div style='font-size: 3.2rem; line-height: 1; position:relative;'>🌾</div>
+            <h2 style='color:#064e3b; margin:0; padding:0; line-height:1.15; font-size:1.9rem; position:relative;'>ClimateKrishi AI</h2>
+            <h3 style='color:#065f46; margin:0.35rem 0 0.6rem; padding:0; line-height:1.2; font-size:1.05rem; font-weight:600; position:relative;'>A Climate Smart Agriculture LCA Tool</h3>
+            <p style='color:#065f46; margin:0 0 0.9rem; font-size:0.92rem; line-height:1.45; position:relative;'>Enter your inputs and instantly compare the environmental cost of rice fertiliser choices.</p>
+            <div style='font-size: 2.6rem; line-height: 1; position:relative;'>🌾🌾🌾🌾🌾🌾🌾🌾🌾</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1693,6 +2048,12 @@ with tab1:
                         ("Zinc", sZn * IMPACT_DATA["Global Warming (kg CO₂-eq)"][3], "#d62728"),
                     ]
                     st.markdown(render_waffle_html(parts, total_label="Upstream GWP"), unsafe_allow_html=True)
+
+                    # Farmer-friendly inferences
+                    render_inference_section([
+                        ("gwp_total", out[0], {"irrigation": "", "amendments_used": False}),
+                        ("ecotox",   out[3], {"zinc": sZn}),
+                    ], key_suffix="t1conv")
                 else:
                     st.error("❌ Conventional model not available.")
 
@@ -1779,6 +2140,12 @@ with tab1:
                         st.altair_chart(build_bullet_chart(sCompost, *ORG_RANGES['Compost'],
                                                            "Compost", "kg/ha"),
                                         use_container_width=True)
+
+                    # Farmer-friendly inferences
+                    render_inference_section([
+                        ("gwp_total", out[0], {"irrigation": "", "amendments_used": True}),
+                        ("ecotox",   out[3], {"zinc": 0}),
+                    ], key_suffix="t1org")
                 else:
                     st.error("❌ Organic model not available. Please ensure model files are present.")
 
@@ -1870,6 +2237,12 @@ with tab1:
                 st.markdown("**Cost vs GWP Trade-off**")
                 st.altair_chart(build_cost_vs_impact_scatter(outA, outB, costA, costB, 
                                 "Comb. A", "Comb. B"), use_container_width=True)
+
+                # Farmer-friendly inferences (interpret combination B)
+                render_inference_section([
+                    ("gwp_total", outB[0], {"irrigation": "", "amendments_used": False}),
+                    ("ecotox",    outB[3], {"zinc": ZnB}),
+                ], key_suffix="t1cmp_conv")
         else:
             st.subheader("Compare Two Organic Amendment Combinations")
             st.markdown("Compare two organic amendment strategies to see how they affect impact scores.")
@@ -1953,6 +2326,12 @@ with tab1:
                 st.markdown("**Cost vs GWP Trade-off**")
                 st.altair_chart(build_cost_vs_impact_scatter(outA, outB, costA, costB,
                                 "Comb. A", "Comb. B"), use_container_width=True)
+
+                # Farmer-friendly inferences (interpret combination B)
+                render_inference_section([
+                    ("gwp_total", outB[0], {"irrigation": "", "amendments_used": True}),
+                    ("ecotox",    outB[3], {"zinc": 0}),
+                ], key_suffix="t1cmp_org")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — GRADIENT ANALYSIS
@@ -2193,6 +2572,16 @@ with tab2:
                 "Δ Conv→Blend"    : [f"{((blend_out[i]-conv_out[i])/conv_out[i])*100:+.1f}%" if conv_out[i] != 0 else "N/A" for i in range(4)],
             })
             st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+
+        # Farmer-friendly inferences for the blend
+        render_inference_section([
+            ("gwp_total",      blend_out[0], {"irrigation": "", "amendments_used": alpha > 0}),
+            ("blend_savings",  None, {
+                "gwp_saved":  conv_out[0] - blend_out[0],
+                "cost_delta": blend_cost - conv_cost,
+                "alpha":      alpha,
+            }),
+        ], key_suffix="t2")
     else:
         st.error("❌ Required models not fully available. Need both conventional and organic models for gradient analysis.")
 
@@ -2280,6 +2669,11 @@ with tab3:
         st.altair_chart(build_ccts_buffer_chart(result), use_container_width=True)
 
     st.altair_chart(build_ccts_value_chart(result), use_container_width=True)
+
+    # Farmer-friendly inferences
+    render_inference_section([
+        ("credits", result['credits_tco2'], {}),
+    ], key_suffix="t3")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — FIELD EMISSION CALCULATOR
@@ -2372,6 +2766,15 @@ with tab4:
         st.caption("Hierarchical view: Climate / Eutrophication / Acidification → individual emissions, sized by magnitude.")
         st.plotly_chart(build_emission_treemap(emissions), use_container_width=True)
 
+        # Farmer-friendly inferences for each emission
+        render_inference_section([
+            ("ch4", emissions["CH4"], {"irrigation": irrigation}),
+            ("n2o", emissions["N2O"], {"synthetic_n": synthetic_n}),
+            ("no3", emissions["NO3"], {}),
+            ("nh3", emissions["NH3"], {}),
+            ("po4", emissions["PO4"], {}),
+        ], key_suffix="t4")
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 5 — MODEL VALIDATION & INFO
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2455,20 +2858,41 @@ with tab5:
         """)
 
 st.markdown("---")
-
-
-st.markdown("---")
 st.caption("© 2026 CLIMATEKRISHI AI | Data from ICAR-IIRR & KVK Medak")
 
-with st.container():
-    logo_cols = st.columns([1, 1, 1, 1], gap="small")
-    logo_files = [
-         "media/footer_logos/iith_logo.jpeg",
-        "media/footer_logos/278969668_371139835029083_611259122675019803_n.jpg",
-        "media/footer_logos/about-removebg-preview.png",
-        "media/footer_logos/olcalogo.png",
-    ]
-    for col, logo in zip(logo_cols, logo_files):
-        with col:
-            if os.path.exists(logo):
-                st.image(logo, use_container_width=True)
+import base64 as _b64
+def _img_to_b64(path):
+    try:
+        with open(path, "rb") as f:
+            return _b64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return ""
+
+_logo_files = [
+    ("media/footer_logos/iith_logo.jpeg", "IIT Hyderabad"),
+    ("media/footer_logos/278969668_371139835029083_611259122675019803_n.jpg", "ICAR-IIRR"),
+    ("media/footer_logos/about-removebg-preview.png", "Krishi Vigyan Kendra"),
+    ("media/footer_logos/olcalogo.png", "openLCA"),
+]
+_logo_html = ""
+for _p, _alt in _logo_files:
+    if os.path.exists(_p):
+        _ext = "png" if _p.lower().endswith(".png") else "jpeg"
+        _b = _img_to_b64(_p)
+        _logo_html += (
+            f"<div style='flex:1; display:flex; align-items:center; justify-content:center; "
+            f"height:110px; padding:0.4rem;'>"
+            f"<img src='data:image/{_ext};base64,{_b}' alt='{_alt}' "
+            f"style='max-height:100%; max-width:100%; object-fit:contain;'/>"
+            f"</div>"
+        )
+
+st.markdown(
+    f"""
+    <div style='display:flex; align-items:center; justify-content:space-between;
+                gap:1.5rem; flex-wrap:nowrap; padding:0.75rem 0 1.25rem;'>
+        {_logo_html}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
