@@ -4,6 +4,7 @@ import numpy as np
 import altair as alt
 import joblib
 import os
+import plotly.graph_objects as go
 
 # ── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -13,17 +14,39 @@ st.set_page_config(
 )
 
 st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
     :root {
-        --ck-surface: rgba(255, 255, 255, 0.82);
-        --ck-surface-strong: rgba(255, 255, 255, 0.94);
-        --ck-border: rgba(15, 23, 42, 0.10);
-        --ck-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
-        --ck-shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.07);
+        --ck-surface: rgba(255, 255, 255, 0.78);
+        --ck-surface-strong: rgba(255, 255, 255, 0.95);
+        --ck-border: rgba(15, 23, 42, 0.08);
+        --ck-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        --ck-shadow-soft: 0 8px 22px rgba(15, 23, 42, 0.06);
+        --ck-accent-1: #16a34a;
+        --ck-accent-2: #0f766e;
+    }
+
+    html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+        font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: 'Space Grotesk', 'Inter', sans-serif;
+        letter-spacing: -0.01em;
+    }
+
+    [data-testid="stAppViewContainer"] {
+        background:
+            radial-gradient(1200px 600px at 10% -10%, rgba(16,185,129,0.10), transparent 60%),
+            radial-gradient(900px 500px at 95% 0%, rgba(14,165,233,0.08), transparent 55%),
+            linear-gradient(180deg, #f7fdf8 0%, #eafaf1 40%, #ffffff 100%);
+        color: #1f2937;
     }
 
     body {
-        background: linear-gradient(180deg, #f7fdf8 0%, #eafaf1 40%, #ffffff 100%);
+        background: transparent;
         color: #1f2937;
     }
 
@@ -67,8 +90,18 @@ st.markdown("""
     .stMainBlockContainer.block-container {
         padding-left: clamp(1rem, 3vw, 5rem) !important;
         padding-right: clamp(1rem, 3vw, 5rem) !important;
-        padding-top: clamp(1.25rem, 3vw, 3rem) !important;
+        padding-top: 0.75rem !important;
     }
+    /* hide the empty Streamlit toolbar gap above content */
+    [data-testid="stHeader"] {
+        height: 0 !important;
+        background: transparent !important;
+    }
+    [data-testid="stToolbar"] {
+        right: 0.5rem;
+        top: 0.25rem;
+    }
+    [data-testid="stDecoration"] { display: none; }
 
     [data-testid="stHorizontalBlock"] {
         row-gap: clamp(0.65rem, 1.15vw, 1rem) !important;
@@ -76,7 +109,7 @@ st.markdown("""
     }
 
     .ck-feature-card {
-        background: white;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fffb 100%);
         padding: 1.2rem;
         border-radius: 20px;
         border: 1px solid rgba(15, 23, 42, 0.08);
@@ -87,6 +120,24 @@ st.markdown("""
         flex-direction: column;
         justify-content: space-between;
         gap: 0.55rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .ck-feature-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: linear-gradient(90deg, #16a34a, #0f766e, #0ea5e9);
+        opacity: 0.85;
+    }
+
+    .ck-feature-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(16, 185, 129, 0.35);
+        box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
     }
 
     .ck-feature-card h4,
@@ -421,7 +472,7 @@ def predict_conventional(N, P, K, Zn):
             pred = model_conventional.predict(scaled)[0]
         else:
             pred = model_conventional.predict(inputs)[0]
-        return pred[0], pred[1], pred[2], pred[3] if len(pred) >= 4 else (pred[0], pred[1], pred[2], 0)
+        return (pred[0], pred[1], pred[2], pred[3] if len(pred) >= 4 else 0)
     except Exception as e:
         st.error(f"❌ Prediction error: {str(e)}")
         return 0, 0, 0, 0
@@ -435,7 +486,7 @@ def predict_organic(manure, compost):
             pred = model_organic.predict(scaled)[0]
         else:
             pred = model_organic.predict(inputs)[0]
-        return pred[0], pred[1], pred[2], pred[3] if len(pred) >= 4 else (pred[0], pred[1], pred[2], 0)
+        return (pred[0], pred[1], pred[2], pred[3] if len(pred) >= 4 else 0)
     except Exception as e:
         st.error(f"❌ Prediction error: {str(e)}")
         return 0, 0, 0, 0
@@ -864,6 +915,551 @@ def build_ccts_value_chart(result):
     return style_chart(chart)
 
 
+def render_gauge_html(label, value_pct, icon="", inverse=True, max_abs=60):
+    """Conic-gradient circular gauge for % change.
+
+    inverse=True => negative values are 'good' (green), positive 'bad' (red).
+    inverse=False => opposite (e.g. cost where lower is also good but shown neutrally).
+    """
+    if value_pct == 0:
+        color = "#94a3b8"
+    elif (value_pct < 0) == inverse:
+        color = "#16a34a"
+    else:
+        color = "#ef4444"
+    pct_capped = min(abs(value_pct) / max_abs * 100, 100)
+    arrow = "▼" if value_pct < 0 else ("▲" if value_pct > 0 else "■")
+    return f"""
+    <div style='background: linear-gradient(180deg,#ffffff 0%, #f8fffb 100%);
+                border-radius:18px; padding:1rem 0.9rem; border:1px solid rgba(15,23,42,0.08);
+                box-shadow:0 10px 24px rgba(15,23,42,0.07); text-align:center; height:100%;'>
+        <div style='font-size:0.82rem; color:#475569; font-weight:600; margin-bottom:0.6rem;
+                    letter-spacing:0.2px;'>{icon} {label}</div>
+        <div style='width:118px; height:118px; margin:0 auto; border-radius:50%;
+                    background: conic-gradient({color} 0% {pct_capped:.1f}%, #e5e7eb {pct_capped:.1f}% 100%);
+                    display:flex; align-items:center; justify-content:center;
+                    box-shadow: 0 6px 18px rgba(15,23,42,0.08);'>
+            <div style='width:88px; height:88px; border-radius:50%; background:white;
+                        display:flex; align-items:center; justify-content:center; flex-direction:column;
+                        box-shadow: inset 0 2px 8px rgba(15,23,42,0.06);'>
+                <div style='font-size:1.05rem; font-weight:700; color:{color};'>{arrow} {abs(value_pct):.1f}%</div>
+                <div style='font-size:0.62rem; color:#94a3b8; letter-spacing:0.4px;'>vs CONV</div>
+            </div>
+        </div>
+    </div>
+    """
+
+
+def render_value_gauge_html(label, value, max_value, unit="", icon="", value_fmt="{:,.2f}",
+                            color_low="#16a34a", color_mid="#f59e0b", color_high="#ef4444"):
+    """Circular conic gauge showing a value as % of a max benchmark.
+
+    Color graduates from low (green) → mid (amber) → high (red) at 33% / 66% thresholds.
+    """
+    pct = (value / max_value * 100) if max_value and max_value > 0 else 0
+    pct_capped = max(0, min(pct, 100))
+    if pct_capped < 50:
+        color = color_low
+    elif pct_capped < 80:
+        color = color_mid
+    else:
+        color = color_high
+    return f"""
+    <div style='background: linear-gradient(180deg,#ffffff 0%, #f8fffb 100%);
+                border-radius:18px; padding:1rem 0.9rem; border:1px solid rgba(15,23,42,0.08);
+                box-shadow:0 10px 24px rgba(15,23,42,0.07); text-align:center; height:100%;'>
+        <div style='font-size:0.82rem; color:#475569; font-weight:600; margin-bottom:0.6rem;
+                    letter-spacing:0.2px;'>{icon} {label}</div>
+        <div style='width:118px; height:118px; margin:0 auto; border-radius:50%;
+                    background: conic-gradient({color} 0% {pct_capped:.1f}%, #e5e7eb {pct_capped:.1f}% 100%);
+                    display:flex; align-items:center; justify-content:center;
+                    box-shadow: 0 6px 18px rgba(15,23,42,0.08);'>
+            <div style='width:88px; height:88px; border-radius:50%; background:white;
+                        display:flex; align-items:center; justify-content:center; flex-direction:column;
+                        box-shadow: inset 0 2px 8px rgba(15,23,42,0.06);'>
+                <div style='font-size:0.95rem; font-weight:700; color:#0f172a;'>{value_fmt.format(value)}</div>
+                <div style='font-size:0.6rem; color:#94a3b8; letter-spacing:0.3px;'>{unit}</div>
+            </div>
+        </div>
+        <div style='margin-top:0.55rem; font-size:0.7rem; color:{color}; font-weight:700;'>
+            {pct:.0f}% of benchmark
+        </div>
+    </div>
+    """
+
+
+def build_cost_comparison_chart(conv_cost, blend_cost, org_cost, alpha):
+    """Horizontal bar chart comparing the three cost scenarios."""
+    df = pd.DataFrame({
+        "Scenario": ["Conventional", f"Blend ({int(alpha*100)}% Org)", "Organic"],
+        "Cost (₹/ha)": [conv_cost, blend_cost, org_cost],
+    })
+    bars = alt.Chart(df).mark_bar(cornerRadiusEnd=8, height=28).encode(
+        y=alt.Y("Scenario:N", sort=["Conventional", f"Blend ({int(alpha*100)}% Org)", "Organic"], title=None),
+        x=alt.X("Cost (₹/ha):Q", title="Input Cost (₹/ha)"),
+        color=alt.Color("Scenario:N", legend=None, scale=alt.Scale(
+            domain=["Conventional", f"Blend ({int(alpha*100)}% Org)", "Organic"],
+            range=["#1d4ed8", "#f97316", "#16a34a"])),
+        tooltip=["Scenario", alt.Tooltip("Cost (₹/ha):Q", format=",.0f")],
+    )
+    labels = alt.Chart(df).mark_text(align="left", dx=6, color="#0f172a", fontWeight="bold").encode(
+        y=alt.Y("Scenario:N", sort=["Conventional", f"Blend ({int(alpha*100)}% Org)", "Organic"]),
+        x="Cost (₹/ha):Q",
+        text=alt.Text("Cost (₹/ha):Q", format=",.0f"),
+    )
+    return style_chart((bars + labels).properties(height=180, title="Input Cost by Scenario"))
+
+
+# ── Advanced visualization helpers ────────────────────────────────────────────
+IMPACT_NAMES = ["Global Warming", "Eutrophication", "Acidification", "Ecotoxicity"]
+
+
+def build_radar_chart(scenarios, title="Impact Profile (normalized)"):
+    """Plotly radar chart. scenarios: list of (label, [v1,v2,v3,v4], color)."""
+    # Normalize each axis to 0–100 by dividing by max across scenarios for that axis
+    arrs = np.array([s[1] for s in scenarios], dtype=float)
+    maxes = arrs.max(axis=0)
+    maxes = np.where(maxes == 0, 1, maxes)
+    fig = go.Figure()
+    for label, vals, color in scenarios:
+        norm = (np.array(vals) / maxes * 100).tolist()
+        fig.add_trace(go.Scatterpolar(
+            r=norm + [norm[0]],
+            theta=IMPACT_NAMES + [IMPACT_NAMES[0]],
+            fill="toself",
+            name=label,
+            line=dict(color=color, width=2),
+            fillcolor=color,
+            opacity=0.45,
+        ))
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor="#e2e8f0")),
+        showlegend=True,
+        title=dict(text=title, x=0.02, xanchor="left", font=dict(size=15, color="#0f172a")),
+        margin=dict(l=40, r=40, t=60, b=40),
+        height=380,
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif"),
+    )
+    return fig
+
+
+def build_sankey_chart(emissions, synthetic_n, synthetic_p, amendment_1, amendment_2):
+    """Sankey: Inputs → Emission types → Final impact category."""
+    inputs = ["Synthetic N", "Synthetic P"]
+    if amendment_1 != "None":
+        inputs.append(f"Amend: {amendment_1}")
+    if amendment_2 != "None":
+        inputs.append(f"Amend: {amendment_2}")
+    em_labels = ["CH₄", "N₂O", "NO₃", "NH₃", "PO₄"]
+    impact_labels = ["Global Warming", "Eutrophication", "Acidification"]
+    nodes = inputs + em_labels + impact_labels
+    idx = {n: i for i, n in enumerate(nodes)}
+
+    sources, targets, values, link_colors = [], [], [], []
+
+    # N drives CH₄, N₂O, NO₃, NH₃; P drives PO₄, partial NH₃
+    n_total = max(synthetic_n, 0.001)
+    p_total = max(synthetic_p, 0.001)
+    contrib = {
+        ("Synthetic N", "CH₄"): emissions["CH4"],
+        ("Synthetic N", "N₂O"): emissions["N2O"],
+        ("Synthetic N", "NO₃"): emissions["NO3"],
+        ("Synthetic N", "NH₃"): emissions["NH3"] * 0.95,
+        ("Synthetic P", "NH₃"): emissions["NH3"] * 0.05,
+        ("Synthetic P", "PO₄"): emissions["PO4"],
+    }
+    for (src, dst), val in contrib.items():
+        sources.append(idx[src]); targets.append(idx[dst]); values.append(max(val, 1e-6))
+        link_colors.append("rgba(59,130,246,0.35)" if "N" in src else "rgba(168,85,247,0.35)")
+
+    # amendments distribute across N₂O / CH₄ / NH₃ proportionally
+    for am in [amendment_1, amendment_2]:
+        if am != "None":
+            src = f"Amend: {am}"
+            for em, frac in [("CH₄", 0.10), ("N₂O", 0.05), ("NH₃", 0.08)]:
+                sources.append(idx[src]); targets.append(idx[em])
+                values.append(max(emissions[{"CH₄":"CH4","N₂O":"N2O","NH₃":"NH3"}[em]] * frac, 1e-6))
+                link_colors.append("rgba(34,197,94,0.35)")
+
+    # Emissions → final impact categories (climate impact mapping)
+    em_to_impact = {
+        "CH₄": ("Global Warming", 28.0),    # GWP factor
+        "N₂O": ("Global Warming", 273.0),
+        "NO₃": ("Eutrophication", 0.42),
+        "PO₄": ("Eutrophication", 1.0),
+        "NH₃": ("Acidification", 1.88),
+    }
+    for em, (impact, factor) in em_to_impact.items():
+        sources.append(idx[em]); targets.append(idx[impact])
+        values.append(max(emissions[{"CH₄":"CH4","N₂O":"N2O","NO₃":"NO3","NH₃":"NH3","PO₄":"PO4"}[em]] * factor, 1e-6))
+        link_colors.append("rgba(239,68,68,0.4)")
+
+    node_colors = (["#3b82f6"] * 2 +
+                   ["#a855f7"] * (len(inputs) - 2) +
+                   ["#f97316"] * len(em_labels) +
+                   ["#16a34a"] * len(impact_labels))
+
+    fig = go.Figure(go.Sankey(
+        node=dict(
+            pad=18, thickness=18,
+            line=dict(color="rgba(15,23,42,0.2)", width=0.5),
+            label=nodes, color=node_colors,
+        ),
+        link=dict(source=sources, target=targets, value=values, color=link_colors),
+    ))
+    fig.update_layout(
+        title=dict(text="Inputs → Emissions → Impact Categories", x=0.02,
+                   font=dict(size=15, color="#0f172a")),
+        font=dict(family="Inter, sans-serif", size=12, color="#334155"),
+        height=460, margin=dict(l=10, r=10, t=60, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def build_speedometer(value_pct, label, max_abs=50, inverse=True):
+    """Plotly speedometer indicator. Negative = good when inverse=True."""
+    if value_pct == 0:
+        bar_color = "#94a3b8"
+    elif (value_pct < 0) == inverse:
+        bar_color = "#16a34a"
+    else:
+        bar_color = "#ef4444"
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number+delta",
+        value=value_pct,
+        number=dict(suffix="%", font=dict(size=22, color="#0f172a")),
+        title=dict(text=label, font=dict(size=13, color="#475569")),
+        gauge=dict(
+            axis=dict(range=[-max_abs, max_abs], tickwidth=1, tickcolor="#94a3b8",
+                      tickfont=dict(size=10)),
+            bar=dict(color=bar_color, thickness=0.30),
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=1,
+            bordercolor="#e2e8f0",
+            steps=[
+                dict(range=[-max_abs, -max_abs/3], color="rgba(34,197,94,0.18)"),
+                dict(range=[-max_abs/3, max_abs/3], color="rgba(148,163,184,0.18)"),
+                dict(range=[max_abs/3, max_abs], color="rgba(239,68,68,0.18)"),
+            ],
+            threshold=dict(line=dict(color="#0f172a", width=3), thickness=0.85, value=value_pct),
+        ),
+    ))
+    fig.update_layout(height=220, margin=dict(l=20, r=20, t=40, b=10),
+                      paper_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family="Inter, sans-serif"))
+    return fig
+
+
+def build_impact_heatmap():
+    """Heatmap of input × impact category from IMPACT_DATA."""
+    rows = []
+    for i, inp in enumerate(IMPACT_DATA["Input"]):
+        rows.append({"Input": inp, "Impact": "Global Warming",
+                     "Value": IMPACT_DATA["Global Warming (kg CO₂-eq)"][i]})
+        rows.append({"Input": inp, "Impact": "Acidification",
+                     "Value": IMPACT_DATA["Terrestrial Acidification (kg SO₂-eq)"][i]})
+        rows.append({"Input": inp, "Impact": "Eutrophication",
+                     "Value": IMPACT_DATA["Freshwater Eutrophication (kg P-eq)"][i]})
+        rows.append({"Input": inp, "Impact": "Ecotoxicity",
+                     "Value": IMPACT_DATA["Terrestrial Ecotoxicity (CTUe)"][i]})
+    df = pd.DataFrame(rows)
+    # log-scale value for color (huge spread Zn ecotox vs others)
+    df["LogValue"] = np.log10(df["Value"].clip(lower=1e-6))
+    chart = alt.Chart(df).mark_rect(stroke="white", strokeWidth=2).encode(
+        x=alt.X("Impact:N", title=None, axis=alt.Axis(labelAngle=0, labelFontSize=11)),
+        y=alt.Y("Input:N", title=None, axis=alt.Axis(labelFontSize=11)),
+        color=alt.Color("LogValue:Q", scale=alt.Scale(scheme="redyellowgreen", reverse=True),
+                        legend=alt.Legend(title="log₁₀(value)", orient="right")),
+        tooltip=["Input", "Impact", alt.Tooltip("Value:Q", format=",.4f")],
+    ).properties(height=240, title="Per-kg Environmental Footprint (log scale)")
+    text = alt.Chart(df).mark_text(fontSize=10, fontWeight="bold").encode(
+        x="Impact:N", y="Input:N",
+        text=alt.Text("Value:Q", format=",.3g"),
+        color=alt.condition("datum.LogValue > 1", alt.value("white"), alt.value("#0f172a")),
+    )
+    return style_chart(chart + text)
+
+
+def build_bullet_chart(value, low, high, label, unit=""):
+    """Linear bullet chart: zones (low/ok/high), value as marker, target band."""
+    span = max(high - low, 1)
+    band_min = max(low - span * 0.5, 0)
+    band_max = high + span * 0.5
+    zones = pd.DataFrame({
+        "zone": ["Below", "Recommended", "Above"],
+        "start": [band_min, low, high],
+        "end":   [low, high, band_max],
+    })
+    zone_color = alt.Scale(domain=["Below", "Recommended", "Above"],
+                           range=["#fde68a", "#86efac", "#fca5a5"])
+    bg = alt.Chart(zones).mark_bar(height=18).encode(
+        x=alt.X("start:Q", title=None, scale=alt.Scale(domain=[band_min, band_max])),
+        x2="end:Q",
+        color=alt.Color("zone:N", scale=zone_color, legend=None),
+        tooltip=["zone", alt.Tooltip("start:Q", format=",.1f"),
+                 alt.Tooltip("end:Q", format=",.1f")],
+    )
+    marker_df = pd.DataFrame({"v": [value]})
+    marker = alt.Chart(marker_df).mark_tick(thickness=4, size=26, color="#0f172a").encode(x="v:Q")
+    text = alt.Chart(marker_df).mark_text(dy=-16, fontWeight="bold", color="#0f172a", fontSize=11).encode(
+        x="v:Q", text=alt.Text("v:Q", format=",.1f")
+    )
+    return style_chart((bg + marker + text).properties(height=70, width=300, title=f"{label} {unit}"))
+
+
+def build_emission_treemap(emissions):
+    """Plotly treemap of emissions broken down by category."""
+    leaves = [
+        ("CH₄", emissions["CH4"], "Climate", "#1f77b4"),
+        ("N₂O", emissions["N2O"], "Climate", "#ff7f0e"),
+        ("NO₃", emissions["NO3"], "Eutrophication", "#2ca02c"),
+        ("PO₄", emissions["PO4"], "Eutrophication", "#9467bd"),
+        ("NH₃", emissions["NH3"], "Acidification", "#d62728"),
+    ]
+    # Build hierarchy with explicit parent rows so Plotly treemap works
+    labels = ["Total"]
+    parents = [""]
+    values = [0.0]
+    colors = ["#0f172a"]
+    groups = {}
+    for em, val, grp, color in leaves:
+        groups.setdefault(grp, 0.0)
+        groups[grp] += val
+    for grp, gval in groups.items():
+        labels.append(grp); parents.append("Total")
+        values.append(0.0); colors.append("#94a3b8")
+    for em, val, grp, color in leaves:
+        labels.append(f"{em} ({val:.3f})")
+        parents.append(grp)
+        values.append(max(val, 1e-6))
+        colors.append(color)
+
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        branchvalues="remainder",
+        marker=dict(colors=colors, line=dict(color="white", width=2)),
+        textfont=dict(family="Inter, sans-serif", size=12, color="white"),
+        hovertemplate="<b>%{label}</b><br>Parent: %{parent}<br>Value: %{value:.4f}<extra></extra>",
+    ))
+    fig.update_layout(height=350, margin=dict(l=10, r=10, t=40, b=10),
+                      title=dict(text="Emission Treemap", x=0.02,
+                                 font=dict(size=15, color="#0f172a")),
+                      paper_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family="Inter, sans-serif"))
+    return fig
+
+
+def build_blend_trend_with_marker(conv_out, org_out, alpha):
+    """Blend trend line with a moving marker at the selected slider position."""
+    rows = []
+    for a in np.linspace(0, 1, 21):
+        vals = (1 - a) * np.array(conv_out) + a * np.array(org_out)
+        for idx, label in enumerate(IMPACT_NAMES):
+            rows.append({"Organic %": a * 100, "Impact": label, "Value": vals[idx]})
+    df = pd.DataFrame(rows)
+    line = alt.Chart(df).mark_line(point=False, strokeWidth=2.5, interpolate="monotone").encode(
+        x=alt.X("Organic %:Q", title="Organic blend (%)"),
+        y=alt.Y("Value:Q", title="Predicted impact"),
+        color=alt.Color("Impact:N", title="Impact"),
+        tooltip=["Impact", alt.Tooltip("Value:Q", format=",.3f"),
+                 alt.Tooltip("Organic %:Q", format=".0f")],
+    )
+    marker_pct = alpha * 100
+    marker_df = pd.DataFrame([
+        {"Organic %": marker_pct, "Impact": label,
+         "Value": (1 - alpha) * conv_out[i] + alpha * org_out[i]}
+        for i, label in enumerate(IMPACT_NAMES)
+    ])
+    marker = alt.Chart(marker_df).mark_point(
+        size=180, filled=True, shape="circle", stroke="#0f172a", strokeWidth=2
+    ).encode(
+        x="Organic %:Q", y="Value:Q",
+        color=alt.Color("Impact:N", legend=None),
+        tooltip=["Impact", alt.Tooltip("Value:Q", format=",.3f")],
+    )
+    rule = alt.Chart(pd.DataFrame({"x": [marker_pct]})).mark_rule(
+        color="#f97316", strokeDash=[4, 4], strokeWidth=1.5
+    ).encode(x="x:Q")
+    return style_chart((line + rule + marker).properties(height=340, width=720,
+                       title=f"Impact Trend Across Blend (marker @ {int(marker_pct)}% organic)"))
+
+
+def build_pareto_with_isolines(conv_out, org_out, conv_cost, org_cost, selected_alpha):
+    """Pareto frontier with iso-cost-per-CO2 dashed reference lines."""
+    rows = []
+    for alpha in np.linspace(0, 1, 21):
+        rows.append({
+            "Organic %": alpha * 100,
+            "Cost (INR/ha)": (1 - alpha) * conv_cost + alpha * org_cost,
+            "GWP (kg CO2-eq)": (1 - alpha) * conv_out[0] + alpha * org_out[0],
+            "Selected": np.isclose(alpha, selected_alpha),
+        })
+    df = pd.DataFrame(rows)
+    line = alt.Chart(df).mark_line(strokeWidth=3, color="#0f766e",
+                                    interpolate="monotone").encode(
+        x=alt.X("Cost (INR/ha):Q"),
+        y=alt.Y("GWP (kg CO2-eq):Q"),
+    )
+    pts = alt.Chart(df).mark_circle(size=90).encode(
+        x="Cost (INR/ha):Q", y="GWP (kg CO2-eq):Q",
+        color=alt.Color("Organic %:Q", title="Organic blend (%)",
+                        scale=alt.Scale(scheme="teals")),
+        tooltip=[alt.Tooltip("Organic %:Q", format=".0f"),
+                 alt.Tooltip("Cost (INR/ha):Q", format=",.0f"),
+                 alt.Tooltip("GWP (kg CO2-eq):Q", format=",.2f")],
+    )
+    selected = alt.Chart(df[df["Selected"]]).mark_point(
+        shape="diamond", size=320, filled=True, color="#f97316",
+        stroke="#0f172a", strokeWidth=2
+    ).encode(x="Cost (INR/ha):Q", y="GWP (kg CO2-eq):Q")
+
+    # Iso-cost-per-CO2 reference lines passing through conv & organic endpoints
+    cost_min = min(conv_cost, org_cost) * 0.9
+    cost_max = max(conv_cost, org_cost) * 1.1
+    iso_lines = []
+    for ratio_label, slope in [("Cheap-to-cut", 0.2), ("Moderate", 0.5), ("Expensive", 1.0)]:
+        intercept = conv_out[0] - slope * conv_cost
+        iso_lines.append(pd.DataFrame({
+            "Cost (INR/ha)": [cost_min, cost_max],
+            "GWP (kg CO2-eq)": [intercept + slope * cost_min, intercept + slope * cost_max],
+            "Iso": [ratio_label, ratio_label],
+        }))
+    iso_df = pd.concat(iso_lines)
+    iso = alt.Chart(iso_df).mark_line(strokeDash=[5, 4], strokeWidth=1, opacity=0.5).encode(
+        x="Cost (INR/ha):Q", y="GWP (kg CO2-eq):Q",
+        color=alt.Color("Iso:N", title="Iso-trade-off",
+                        scale=alt.Scale(range=["#94a3b8", "#64748b", "#475569"])),
+    )
+    return style_chart((iso + line + pts + selected).properties(
+        height=360, width=720, title="Cost-Climate Frontier with Iso-trade-off Lines"))
+
+
+def build_blend_streamgraph(conv_out, org_out):
+    """Stacked area showing each impact's share of total across blend %."""
+    rows = []
+    for a in np.linspace(0, 1, 21):
+        vals = (1 - a) * np.array(conv_out) + a * np.array(org_out)
+        # Normalize each row so total=100% (composition view)
+        total = vals.sum() or 1
+        for idx, label in enumerate(IMPACT_NAMES):
+            rows.append({"Organic %": a * 100, "Impact": label,
+                         "Share": vals[idx] / total * 100})
+    df = pd.DataFrame(rows)
+    chart = alt.Chart(df).mark_area(interpolate="monotone", opacity=0.85).encode(
+        x=alt.X("Organic %:Q", title="Organic blend (%)"),
+        y=alt.Y("Share:Q", stack="normalize", title="Share of total impact"),
+        color=alt.Color("Impact:N",
+                        scale=alt.Scale(range=["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"])),
+        tooltip=["Impact", alt.Tooltip("Share:Q", format=".1f"),
+                 alt.Tooltip("Organic %:Q", format=".0f")],
+    ).properties(height=300, width=720, title="Impact Composition Across Blend Transition")
+    return style_chart(chart)
+
+
+def render_waffle_html(parts, total_label="GWP", squares=100):
+    """HTML waffle: 100 colored squares showing % share of each part.
+
+    parts: list of (label, value, color)
+    """
+    total = sum(p[1] for p in parts) or 1
+    pct = []
+    cumulative = 0
+    for label, val, color in parts:
+        share = round(val / total * squares)
+        pct.append((label, share, color))
+        cumulative += share
+    # adjust last to make sum = squares
+    if cumulative != squares and pct:
+        last = list(pct[-1])
+        last[1] += squares - cumulative
+        pct[-1] = tuple(last)
+
+    cells = []
+    for label, count, color in pct:
+        for _ in range(count):
+            cells.append(f"<div style='width:18px;height:18px;background:{color};"
+                         f"border-radius:4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.4);'"
+                         f" title='{label}'></div>")
+
+    legend = "".join(
+        f"<div style='display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:#334155;'>"
+        f"<span style='width:12px;height:12px;border-radius:3px;background:{color};'></span>"
+        f"<span>{label} ({val/total*100:.0f}%)</span></div>"
+        for label, val, color in parts
+    )
+    return f"""
+    <div style='background:white;border-radius:18px;padding:1rem 1.1rem;
+                border:1px solid rgba(15,23,42,0.08);box-shadow:0 10px 24px rgba(15,23,42,0.07);'>
+        <div style='font-weight:700;color:#0f172a;margin-bottom:0.6rem;'>{total_label} Composition (1 square = 1%)</div>
+        <div style='display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin-bottom:0.85rem;'>
+            {''.join(cells)}
+        </div>
+        <div style='display:flex;flex-wrap:wrap;gap:0.9rem;'>{legend}</div>
+    </div>
+    """
+
+
+def build_confidence_band_chart(conv_out, org_out, band_pct=0.10):
+    """Blend GWP across alpha with ±band_pct confidence band (illustrative)."""
+    rows = []
+    for a in np.linspace(0, 1, 21):
+        gwp = (1 - a) * conv_out[0] + a * org_out[0]
+        rows.append({"Organic %": a * 100, "GWP": gwp,
+                     "low": gwp * (1 - band_pct), "high": gwp * (1 + band_pct)})
+    df = pd.DataFrame(rows)
+    band = alt.Chart(df).mark_area(opacity=0.25, color="#0f766e").encode(
+        x=alt.X("Organic %:Q", title="Organic blend (%)"),
+        y=alt.Y("low:Q", title="GWP (kg CO₂-eq)"),
+        y2="high:Q",
+    )
+    line = alt.Chart(df).mark_line(strokeWidth=2.5, color="#0f766e").encode(
+        x="Organic %:Q", y="GWP:Q",
+        tooltip=[alt.Tooltip("Organic %:Q", format=".0f"),
+                 alt.Tooltip("GWP:Q", format=",.2f"),
+                 alt.Tooltip("low:Q", format=",.2f"),
+                 alt.Tooltip("high:Q", format=",.2f")],
+    )
+    return style_chart((band + line).properties(height=300, width=720,
+                       title=f"GWP vs Blend with ±{int(band_pct*100)}% Confidence Band"))
+
+
+def render_diff_arrow_html(value_a, value_b, unit="", label="", fmt="{:.2f}"):
+    """Show A vs B with animated arrow + % diff."""
+    if value_a == 0:
+        pct = 0
+    else:
+        pct = (value_b - value_a) / value_a * 100
+    if pct < 0:
+        color = "#16a34a"; arrow = "▼"; verdict = "B is greener"
+    elif pct > 0:
+        color = "#ef4444"; arrow = "▲"; verdict = "B is worse"
+    else:
+        color = "#64748b"; arrow = "■"; verdict = "Tie"
+    return f"""
+    <div style='display:flex;align-items:center;justify-content:space-between;
+                background:white;border-radius:14px;padding:0.8rem 1rem;
+                border:1px solid rgba(15,23,42,0.08);box-shadow:0 8px 18px rgba(15,23,42,0.06);
+                gap:0.8rem;'>
+        <div style='text-align:center;flex:1;'>
+            <div style='font-size:0.7rem;color:#64748b;letter-spacing:0.4px;'>A</div>
+            <div style='font-weight:700;color:#0f172a;'>{fmt.format(value_a)} {unit}</div>
+        </div>
+        <div style='text-align:center;'>
+            <div style='font-size:1.4rem;color:{color};font-weight:800;line-height:1;'>{arrow}</div>
+            <div style='font-size:0.85rem;color:{color};font-weight:700;'>{abs(pct):+.1f}%</div>
+            <div style='font-size:0.65rem;color:#94a3b8;'>{verdict}</div>
+        </div>
+        <div style='text-align:center;flex:1;'>
+            <div style='font-size:0.7rem;color:#64748b;letter-spacing:0.4px;'>B</div>
+            <div style='font-weight:700;color:#0f172a;'>{fmt.format(value_b)} {unit}</div>
+        </div>
+        <div style='font-size:0.78rem;color:#475569;font-weight:600;min-width:90px;'>{label}</div>
+    </div>
+    """
+
+
 def calculate_soc_credits(manure, compost, buffer_pct):
     """Estimate soil-carbon-only credit potential from FYM and compost inputs."""
     c_to_co2 = 3.667
@@ -897,24 +1493,37 @@ def calculate_soc_credits(manure, compost, buffer_pct):
 # MAIN UI
 # ══════════════════════════════════════════════════════════════════════════════
 with st.container():
-    hero_left, hero_right = st.columns([2.4, 1.6])
+    hero_left, hero_right = st.columns([2.4, 1.6], gap="small")
     with hero_left:
         st.markdown("""
-        ### Welcome to CLIMATEKRISHI AI
-        ## Smart farming for a sustainable Bharat 
-        """)
-        st.markdown("""
-        Predict and compare the **full environmental impact** of fertiliser application in rice cultivation — including upstream production emissions and field-level emissions, powered by ISO 14040/44-compliant LCA.
-        """)
-        st.markdown("""
-        **Fast insights, actionable comparisons, and cost-aware recommendations for rice farmers and agronomists.**
-        """)
+        <div style='display:inline-flex; align-items:center; gap:0.45rem; background:rgba(16,185,129,0.12); color:#065f46;
+                    padding:0.35rem 0.85rem; border-radius:999px; font-weight:600; font-size:0.82rem;
+                    border:1px solid rgba(16,185,129,0.25); margin-bottom:0.85rem;'>
+            <span style='width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.18);'></span>
+            AI · LCA · Climate Smart
+        </div>
+        <h1 style='margin:0 0 0.35rem; font-size: clamp(1.8rem, 3.4vw, 2.6rem); color:#0f172a;'>
+            Smart farming for a <span style='background:linear-gradient(90deg,#16a34a,#0f766e); -webkit-background-clip:text; -webkit-text-fill-color:transparent;'>sustainable Bharat</span>
+        </h1>
+        <p style='color:#334155; font-size:1.02rem; line-height:1.6; margin:0.4rem 0 0.6rem;'>
+            Predict and compare the <b>full environmental impact</b> of fertiliser application in rice cultivation —
+            including upstream production emissions and field-level emissions, powered by ISO 14040/44-compliant LCA.
+        </p>
+        <p style='color:#0f172a; font-weight:600; margin:0;'>
+            Fast insights, actionable comparisons, and cost-aware recommendations for rice farmers and agronomists.
+        </p>
+        """, unsafe_allow_html=True)
     with hero_right:
         st.markdown("""
-        <div style='background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%); border-radius: 28px; padding: 2rem; text-align: center; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);'>
-            <h3 style='color:#064e3b; margin-bottom: 0.75rem;'>Climate Smart LCA Tool</h3>
-            <p style='color:#065f46; margin-bottom: 1.5rem;'>Enter your inputs and instantly compare the environmental cost of rice fertiliser choices.</p>
-            <div style='font-size: 3rem; line-height: 1; color: #059669;'>🌾</div>
+        <div style='position:relative; background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
+                    border-radius: 28px; padding: 2rem 1.6rem; text-align: center;
+                    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+                    border: 1px solid rgba(16,185,129,0.25); overflow:hidden;'>
+            <div style='position:absolute; top:-40px; right:-40px; width:160px; height:160px;
+                        background: radial-gradient(circle, rgba(16,185,129,0.35), transparent 70%); border-radius:50%;'></div>
+            <h3 style='color:#064e3b; margin:0 0 0.5rem; position:relative;'>Climate Smart LCA Tool</h3>
+            <p style='color:#065f46; margin:0 0 1.25rem; position:relative;'>Enter your inputs and instantly compare the environmental cost of rice fertiliser choices.</p>
+            <div style='font-size: 3.2rem; line-height: 1; position:relative;'>🌾</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1031,9 +1640,59 @@ with tab1:
                     with col2:
                         st.metric("🌫️ Terrestrial Acidification", f"{out[2]:.4f} kg SO₂-eq")
                         st.metric("☠️ Terrestrial Ecotoxicity",   f"{out[3]:,.2f} CTUe")
-                    
+
                     chart_df = build_impact_dataframe(out, "Conventional")
                     st.altair_chart(build_impact_chart(chart_df), use_container_width=True)
+
+                    # Visual gauges – your impact vs the upper-range benchmark (max recommended inputs)
+                    bench = predict_conventional(150, 60, 40, 30)
+                    st.markdown("#### 📉 Impact vs Upper-Range Benchmark")
+                    st.caption("Each ring shows where your input lands compared to the maximum recommended Conventional dose.")
+                    g1, g2, g3, g4 = st.columns(4)
+                    with g1:
+                        st.markdown(render_value_gauge_html("Global Warming", out[0], bench[0],
+                                                           unit="kg CO₂-eq", icon="🌍", value_fmt="{:,.0f}"), unsafe_allow_html=True)
+                    with g2:
+                        st.markdown(render_value_gauge_html("Eutrophication", out[1], bench[1],
+                                                           unit="kg P-eq", icon="💧", value_fmt="{:.4f}"), unsafe_allow_html=True)
+                    with g3:
+                        st.markdown(render_value_gauge_html("Acidification", out[2], bench[2],
+                                                           unit="kg SO₂-eq", icon="🌫️", value_fmt="{:.2f}"), unsafe_allow_html=True)
+                    with g4:
+                        st.markdown(render_value_gauge_html("Ecotoxicity", out[3], bench[3],
+                                                           unit="CTUe", icon="☠️", value_fmt="{:,.0f}"), unsafe_allow_html=True)
+
+                    # Radar chart vs benchmark
+                    st.markdown("#### 🕸️ Impact Profile (Radar)")
+                    st.caption("Your input vs maximum-recommended dose, normalized 0–100 across all 4 categories.")
+                    st.plotly_chart(build_radar_chart([
+                        ("Your Input", list(out), "#1d4ed8"),
+                        ("Max Dose Benchmark", list(bench), "#ef4444"),
+                    ], title="Your Conventional Input vs Benchmark"), use_container_width=True)
+
+                    # Bullet charts per nutrient – are inputs in recommended range?
+                    st.markdown("#### 🎯 Input Levels vs Recommended Range (Bullet Charts)")
+                    bcol1, bcol2 = st.columns(2)
+                    with bcol1:
+                        st.altair_chart(build_bullet_chart(sN, *CONV_RANGES['N'], "Nitrogen (N)", "kg/ha"),
+                                        use_container_width=True)
+                        st.altair_chart(build_bullet_chart(sK, *CONV_RANGES['K'], "Potassium (K)", "kg/ha"),
+                                        use_container_width=True)
+                    with bcol2:
+                        st.altair_chart(build_bullet_chart(sP, *CONV_RANGES['P'], "Phosphorus (P)", "kg/ha"),
+                                        use_container_width=True)
+                        st.altair_chart(build_bullet_chart(sZn, *CONV_RANGES['Zn'], "Zinc (Zn)", "kg/ha"),
+                                        use_container_width=True)
+
+                    # Waffle: per-nutrient share of GWP based on IMPACT_DATA + actual dose
+                    st.markdown("#### 🟩 GWP Composition by Nutrient (Waffle)")
+                    parts = [
+                        ("Nitrogen", sN * IMPACT_DATA["Global Warming (kg CO₂-eq)"][0], "#1f77b4"),
+                        ("Phosphorus", sP * IMPACT_DATA["Global Warming (kg CO₂-eq)"][1], "#ff7f0e"),
+                        ("Potassium", sK * IMPACT_DATA["Global Warming (kg CO₂-eq)"][2], "#2ca02c"),
+                        ("Zinc", sZn * IMPACT_DATA["Global Warming (kg CO₂-eq)"][3], "#d62728"),
+                    ]
+                    st.markdown(render_waffle_html(parts, total_label="Upstream GWP"), unsafe_allow_html=True)
                 else:
                     st.error("❌ Conventional model not available.")
 
@@ -1079,9 +1738,47 @@ with tab1:
                     with col2:
                         st.metric("🌫️ Terrestrial Acidification", f"{out[2]:.4f} kg SO₂-eq")
                         st.metric("☠️ Terrestrial Ecotoxicity",   f"{out[3]:,.2f} CTUe")
-                    
+
                     chart_df = build_impact_dataframe(out, "Organic")
                     st.altair_chart(build_impact_chart(chart_df), use_container_width=True)
+
+                    # Visual gauges – your impact vs the upper-range benchmark (max recommended inputs)
+                    bench = predict_organic(15000, 2000)
+                    st.markdown("#### 📉 Impact vs Upper-Range Benchmark")
+                    st.caption("Each ring shows where your input lands compared to the maximum recommended Organic dose.")
+                    g1, g2, g3, g4 = st.columns(4)
+                    with g1:
+                        st.markdown(render_value_gauge_html("Global Warming", out[0], bench[0],
+                                                           unit="kg CO₂-eq", icon="🌍", value_fmt="{:,.0f}"), unsafe_allow_html=True)
+                    with g2:
+                        st.markdown(render_value_gauge_html("Eutrophication", out[1], bench[1],
+                                                           unit="kg P-eq", icon="💧", value_fmt="{:.4f}"), unsafe_allow_html=True)
+                    with g3:
+                        st.markdown(render_value_gauge_html("Acidification", out[2], bench[2],
+                                                           unit="kg SO₂-eq", icon="🌫️", value_fmt="{:.2f}"), unsafe_allow_html=True)
+                    with g4:
+                        st.markdown(render_value_gauge_html("Ecotoxicity", out[3], bench[3],
+                                                           unit="CTUe", icon="☠️", value_fmt="{:,.0f}"), unsafe_allow_html=True)
+
+                    # Radar chart
+                    st.markdown("#### 🕸️ Impact Profile (Radar)")
+                    st.caption("Your input vs maximum-recommended dose, normalized 0–100 across all 4 categories.")
+                    st.plotly_chart(build_radar_chart([
+                        ("Your Input", list(out), "#15803d"),
+                        ("Max Dose Benchmark", list(bench), "#ef4444"),
+                    ], title="Your Organic Input vs Benchmark"), use_container_width=True)
+
+                    # Bullet charts per amendment
+                    st.markdown("#### 🎯 Input Levels vs Recommended Range (Bullet Charts)")
+                    bcol1, bcol2 = st.columns(2)
+                    with bcol1:
+                        st.altair_chart(build_bullet_chart(sManure, *ORG_RANGES['Manure'],
+                                                           "Farm Yard Manure", "kg/ha"),
+                                        use_container_width=True)
+                    with bcol2:
+                        st.altair_chart(build_bullet_chart(sCompost, *ORG_RANGES['Compost'],
+                                                           "Compost", "kg/ha"),
+                                        use_container_width=True)
                 else:
                     st.error("❌ Organic model not available. Please ensure model files are present.")
 
@@ -1136,6 +1833,39 @@ with tab1:
                 compare_df = build_comparison_dataframe(outA, outB)
                 st.altair_chart(build_comparison_chart(compare_df), use_container_width=True)
 
+                # Visual gauges – B as % of A (lower than 100% means B has less impact than A)
+                st.markdown("#### 📉 Combination B vs A (lower is better)")
+                st.caption("Each ring shows B's impact as a percentage of A. <100% (green) means B is greener.")
+                cmp_g = st.columns(4)
+                cmp_data = [
+                    ("Global Warming", "🌍", outB[0], outA[0], "vs A", "{:,.0f}"),
+                    ("Eutrophication", "💧", outB[1], outA[1], "vs A", "{:.4f}"),
+                    ("Acidification", "🌫️", outB[2], outA[2], "vs A", "{:.2f}"),
+                    ("Ecotoxicity", "☠️", outB[3], outA[3], "vs A", "{:,.0f}"),
+                ]
+                for col, (lbl, ic, val, base, u, fmt) in zip(cmp_g, cmp_data):
+                    with col:
+                        st.markdown(render_value_gauge_html(lbl, val, base, unit=u, icon=ic, value_fmt=fmt),
+                                    unsafe_allow_html=True)
+
+                # Radar A vs B
+                st.markdown("#### 🕸️ Profile Comparison (Radar)")
+                st.plotly_chart(build_radar_chart([
+                    ("Combination A", list(outA), "#3b82f6"),
+                    ("Combination B", list(outB), "#f97316"),
+                ], title="A vs B — Impact Profile"), use_container_width=True)
+
+                # Diff arrows
+                st.markdown("#### 🔀 Side-by-Side Difference")
+                diff_unit_fmt = [("kg CO₂-eq", "{:,.1f}"), ("kg P-eq", "{:.4f}"),
+                                 ("kg SO₂-eq", "{:.3f}"), ("CTUe", "{:,.0f}")]
+                for i, cat in enumerate(IMPACT_NAMES):
+                    u, f = diff_unit_fmt[i]
+                    st.markdown(render_diff_arrow_html(outA[i], outB[i], unit=u,
+                                label=cat, fmt=f), unsafe_allow_html=True)
+                st.markdown(render_diff_arrow_html(costA, costB, unit="₹/ha",
+                            label="Input Cost", fmt="{:,.0f}"), unsafe_allow_html=True)
+
                 st.markdown("---")
                 st.markdown("**Cost vs GWP Trade-off**")
                 st.altair_chart(build_cost_vs_impact_scatter(outA, outB, costA, costB, 
@@ -1182,13 +1912,46 @@ with tab1:
                         st.metric(f"{cat} — B", f"{formats[i].format(outB[i])} {units[i]}")
                     with col3:
                         st.markdown(build_winner_badge(outA[i], outB[i]), unsafe_allow_html=True)
-                
+
                 compare_df = build_comparison_dataframe(outA, outB)
                 st.altair_chart(build_comparison_chart(compare_df), use_container_width=True)
 
+                # Visual gauges – B as % of A
+                st.markdown("#### 📉 Combination B vs A (lower is better)")
+                st.caption("Each ring shows B's impact as a percentage of A. <100% (green) means B is greener.")
+                cmp_g = st.columns(4)
+                cmp_data = [
+                    ("Global Warming", "🌍", outB[0], outA[0], "vs A", "{:,.0f}"),
+                    ("Eutrophication", "💧", outB[1], outA[1], "vs A", "{:.4f}"),
+                    ("Acidification", "🌫️", outB[2], outA[2], "vs A", "{:.2f}"),
+                    ("Ecotoxicity", "☠️", outB[3], outA[3], "vs A", "{:,.0f}"),
+                ]
+                for col, (lbl, ic, val, base, u, fmt) in zip(cmp_g, cmp_data):
+                    with col:
+                        st.markdown(render_value_gauge_html(lbl, val, base, unit=u, icon=ic, value_fmt=fmt),
+                                    unsafe_allow_html=True)
+
+                # Radar A vs B
+                st.markdown("#### 🕸️ Profile Comparison (Radar)")
+                st.plotly_chart(build_radar_chart([
+                    ("Combination A", list(outA), "#3b82f6"),
+                    ("Combination B", list(outB), "#f97316"),
+                ], title="A vs B — Organic Impact Profile"), use_container_width=True)
+
+                # Diff arrows
+                st.markdown("#### 🔀 Side-by-Side Difference")
+                diff_unit_fmt = [("kg CO₂-eq", "{:,.1f}"), ("kg P-eq", "{:.4f}"),
+                                 ("kg SO₂-eq", "{:.3f}"), ("CTUe", "{:,.0f}")]
+                for i, cat in enumerate(IMPACT_NAMES):
+                    u, f = diff_unit_fmt[i]
+                    st.markdown(render_diff_arrow_html(outA[i], outB[i], unit=u,
+                                label=cat, fmt=f), unsafe_allow_html=True)
+                st.markdown(render_diff_arrow_html(costA, costB, unit="₹/ha",
+                            label="Amendment Cost", fmt="{:,.0f}"), unsafe_allow_html=True)
+
                 st.markdown("---")
                 st.markdown("**Cost vs GWP Trade-off**")
-                st.altair_chart(build_cost_vs_impact_scatter(outA, outB, costA, costB, 
+                st.altair_chart(build_cost_vs_impact_scatter(outA, outB, costA, costB,
                                 "Comb. A", "Comb. B"), use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1248,8 +2011,39 @@ with tab2:
         org_cost   = calc_cost(N, P, K, Zn, manure, compost, 1.0)
         blend_cost = calc_cost(N, P, K, Zn, manure, compost, alpha)
 
-        col_sidebar, col_main = st.columns([1.05, 2.95], gap="medium")
-        with col_sidebar:
+        st.subheader("📊 Environmental Impact at Selected Blend")
+        st.caption("Includes upstream fertiliser production + field-level emissions (N₂O, NO₃, NH₃, PO₄)")
+
+        # Summary gauges (visual % change vs Conventional)
+        col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
+        gwp_reduction = ((blend_out[0] - conv_out[0]) / conv_out[0] * 100) if conv_out[0] != 0 else 0
+        cost_delta_pct = ((blend_cost - conv_cost) / conv_cost * 100) if conv_cost != 0 else 0
+        acidif_reduction = ((blend_out[2] - conv_out[2]) / conv_out[2] * 100) if conv_out[2] != 0 else 0
+        eutroph_reduction = ((blend_out[1] - conv_out[1]) / conv_out[1] * 100) if conv_out[1] != 0 else 0
+        with col_kpi1:
+            st.markdown(render_gauge_html("Global Warming", gwp_reduction, icon="🌍"), unsafe_allow_html=True)
+        with col_kpi2:
+            st.markdown(render_gauge_html("Input Cost", cost_delta_pct, icon="💰", inverse=True), unsafe_allow_html=True)
+        with col_kpi3:
+            st.markdown(render_gauge_html("Acidification", acidif_reduction, icon="🌫️"), unsafe_allow_html=True)
+        with col_kpi4:
+            st.markdown(render_gauge_html("Eutrophication", eutroph_reduction, icon="💧"), unsafe_allow_html=True)
+
+        # Plotly speedometer gauges (alternative visualisation, animates with slider)
+        st.markdown("##### 🏎️ Speedometer View (Plotly)")
+        sp1, sp2, sp3, sp4 = st.columns(4)
+        with sp1:
+            st.plotly_chart(build_speedometer(gwp_reduction, "GWP %"), use_container_width=True)
+        with sp2:
+            st.plotly_chart(build_speedometer(cost_delta_pct, "Cost %", inverse=True), use_container_width=True)
+        with sp3:
+            st.plotly_chart(build_speedometer(acidif_reduction, "Acid. %"), use_container_width=True)
+        with sp4:
+            st.plotly_chart(build_speedometer(eutroph_reduction, "Eutro. %"), use_container_width=True)
+
+        st.markdown(" ")
+        scenario_col1, scenario_col2, scenario_col3 = st.columns(3, gap="medium")
+        with scenario_col1:
             st.markdown("""
                 <div class='ck-scenario-card'>
                     <div class='ck-scenario-head'>
@@ -1263,6 +2057,7 @@ with tab2:
                     <p style='margin:0; color:#0f172a; font-weight:600;'>Cost: ₹{conv_cost:,.0f}/ha</p>
                 </div>
             """.format(conv_gwp=conv_out[0], conv_cost=conv_cost), unsafe_allow_html=True)
+        with scenario_col2:
             st.markdown("""
                 <div class='ck-scenario-card'>
                     <div class='ck-scenario-head'>
@@ -1276,6 +2071,7 @@ with tab2:
                     <p style='margin:0; color:#0f172a; font-weight:600;'>Cost: ₹{blend_cost:,.0f}/ha</p>
                 </div>
             """.format(blend_gwp=blend_out[0], blend_cost=blend_cost), unsafe_allow_html=True)
+        with scenario_col3:
             st.markdown("""
                 <div class='ck-scenario-card'>
                     <div class='ck-scenario-head'>
@@ -1289,37 +2085,16 @@ with tab2:
                     <p style='margin:0; color:#0f172a; font-weight:600;'>Cost: ₹{org_cost:,.0f}/ha</p>
                 </div>
             """.format(org_gwp=org_out[0], org_cost=org_cost), unsafe_allow_html=True)
+        st.caption(f"Snapshots update instantly for the selected blend ({int(alpha * 100)}% organic).")
 
-        with col_main:
-            st.subheader("📊 Environmental Impact at Selected Blend")
-            st.caption("Includes upstream fertiliser production + field-level emissions (N₂O, NO₃, NH₃, PO₄)")
-            
-            # Summary metrics
-            col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-            gwp_reduction = ((conv_out[0] - blend_out[0]) / conv_out[0] * 100) if conv_out[0] != 0 else 0
-            with col_kpi1:
-                st.metric("📉 GWP Change", f"{gwp_reduction:+.1f}%", delta_color="inverse")
-            with col_kpi2:
-                cost_delta_pct = ((blend_cost - conv_cost) / conv_cost * 100) if conv_cost != 0 else 0
-                st.metric("💰 Cost Change", f"{cost_delta_pct:+.1f}%", delta_color="normal")
-            with col_kpi3:
-                acidif_reduction = ((conv_out[2] - blend_out[2]) / conv_out[2] * 100) if conv_out[2] != 0 else 0
-                st.metric("Acidification", f"{acidif_reduction:+.1f}%", delta_color="inverse")
-            with col_kpi4:
-                eutroph_reduction = ((conv_out[1] - blend_out[1]) / conv_out[1] * 100) if conv_out[1] != 0 else 0
-                st.metric("Eutrophication", f"{eutroph_reduction:+.1f}%", delta_color="inverse")
-
-            st.markdown("###### Live Blend Snapshot")
-            blend_df = pd.concat([
-                build_impact_dataframe(conv_out, "Conventional"),
-                build_impact_dataframe(blend_out, "Blend"),
-                build_impact_dataframe(org_out, "Organic")
-            ])
-            st.altair_chart(build_live_blend_index_chart(conv_out, blend_out, org_out), use_container_width=True)
-            st.caption(f"This chart updates instantly for the selected blend ({int(alpha * 100)}% organic).")
+        blend_df = pd.concat([
+            build_impact_dataframe(conv_out, "Conventional"),
+            build_impact_dataframe(blend_out, "Blend"),
+            build_impact_dataframe(org_out, "Organic")
+        ])
         
         st.markdown("---")
-
+        st.subheader("� Detailed Impact by Scenario")
         for i, (label, unit, fmt) in enumerate(zip(IMPACT_LABELS, IMPACT_UNITS, IMPACT_FORMATS)):
             col1, col2, col3 = st.columns(3)
             delta_pct = ((blend_out[i] - conv_out[i]) / conv_out[i]) * 100 if conv_out[i] != 0 else 0
@@ -1332,24 +2107,50 @@ with tab2:
                 st.metric(f"{label} — Organic", f"{fmt.format(org_out[i])} {unit}")
 
         st.markdown("---")
-
+        st.subheader("� Impact Breakdown")
         st.altair_chart(build_gradient_impact_chart(blend_df), use_container_width=True)
 
         st.markdown("---")
-        st.subheader("💰 Input Cost Analysis (₹/ha)")
-        col1, col2, col3 = st.columns(3)
-        with col1:
+        st.subheader("💰 Input Cost Analysis")
+        cost_delta = blend_cost - conv_cost
+        cost_col1, cost_col2, cost_col3 = st.columns(3)
+        with cost_col1:
             st.metric("🧪 Conventional Cost", f"₹{conv_cost:,.0f}/ha")
-        with col2:
-            cost_delta = blend_cost - conv_cost
+        with cost_col2:
             st.metric("🎚️ Blend Cost", f"₹{blend_cost:,.0f}/ha",
                       delta=f"₹{cost_delta:+,.0f} vs Conv.")
-        with col3:
+        with cost_col3:
             st.metric("🌿 Organic Cost", f"₹{org_cost:,.0f}/ha")
+        st.altair_chart(build_cost_comparison_chart(conv_cost, blend_cost, org_cost, alpha),
+                        use_container_width=True)
 
         st.markdown("---")
         st.subheader("📈 Impact Trend Across Organic Blend")
         st.altair_chart(build_blend_chart(conv_out, org_out), use_container_width=True)
+
+        # Animated marker that moves with the slider
+        st.markdown("##### 🎯 Same trend with live slider marker")
+        st.altair_chart(build_blend_trend_with_marker(conv_out, org_out, alpha),
+                        use_container_width=True)
+
+        # Confidence band
+        st.markdown("##### 〰️ GWP with ±10% Confidence Band")
+        st.altair_chart(build_confidence_band_chart(conv_out, org_out, band_pct=0.10),
+                        use_container_width=True)
+
+        # Streamgraph: composition of impacts across blend
+        st.markdown("##### 🌊 Impact Composition Streamgraph")
+        st.altair_chart(build_blend_streamgraph(conv_out, org_out),
+                        use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("🕸️ Three-Scenario Radar")
+        st.caption("Conventional vs Blend vs Organic — compare profiles at a glance.")
+        st.plotly_chart(build_radar_chart([
+            ("Conventional", list(conv_out), "#1d4ed8"),
+            (f"Blend ({int(alpha*100)}% Org)", list(blend_out), "#f97316"),
+            ("Organic", list(org_out), "#16a34a"),
+        ], title="Conv vs Blend vs Organic"), use_container_width=True)
 
         st.markdown("---")
         st.subheader("🧭 Blend Decision Charts")
@@ -1361,6 +2162,13 @@ with tab2:
             )
         with delta_col:
             st.altair_chart(build_impact_delta_chart(conv_out, blend_out), use_container_width=True)
+
+        # Pareto frontier with iso-trade-off lines
+        st.markdown("##### ⚖️ Pareto Frontier with Iso-trade-off Lines")
+        st.altair_chart(
+            build_pareto_with_isolines(conv_out, org_out, conv_cost, org_cost, alpha),
+            use_container_width=True,
+        )
 
         gwp_reduction = conv_out[0] - blend_out[0]
         if gwp_reduction > 0:
@@ -1436,6 +2244,24 @@ with tab3:
     with kpi2:
         st.metric("📦 SOC Stored (Before Buffer)", f"{result['soc_before_buffer_tco2']:.3f} t CO2-eq/ha")
 
+    # Visual gauges – credits & value vs upper-range benchmark (max manure & compost)
+    bench = calculate_soc_credits(15000, 2000, buffer_pct)
+    st.markdown("#### 📉 Credit Potential vs Upper-Range Benchmark")
+    st.caption("Each ring shows your potential relative to the maximum recommended FYM + compost dose.")
+    cg1, cg2, cg3, cg4 = st.columns(4)
+    with cg1:
+        st.markdown(render_value_gauge_html("Credits Earned", result["credits_tco2"], bench["credits_tco2"],
+                                           unit="t CO₂/ha", icon="🌱", value_fmt="{:.3f}"), unsafe_allow_html=True)
+    with cg2:
+        st.markdown(render_value_gauge_html("SOC Stored", result["soc_before_buffer_tco2"], bench["soc_before_buffer_tco2"],
+                                           unit="t CO₂/ha", icon="📦", value_fmt="{:.3f}"), unsafe_allow_html=True)
+    with cg3:
+        st.markdown(render_value_gauge_html("FYM Contribution", result["fym_credits_tco2"], bench["fym_credits_tco2"],
+                                           unit="t CO₂/ha", icon="🐄", value_fmt="{:.3f}"), unsafe_allow_html=True)
+    with cg4:
+        st.markdown(render_value_gauge_html("Compost Contribution", result["compost_credits_tco2"], bench["compost_credits_tco2"],
+                                           unit="t CO₂/ha", icon="🍂", value_fmt="{:.3f}"), unsafe_allow_html=True)
+
     st.markdown("##### Estimated Value (per ha, CCTS)")
     st.info(
         f"₹{result['value_low_inr']:,.0f} - ₹{result['value_high_inr']:,.0f}\n\n"
@@ -1476,14 +2302,33 @@ with tab4:
     if st.button("📈 Calculate Field Emissions", use_container_width=True, key="calc_emissions"):
         emissions = compute_field_emissions(synthetic_n, synthetic_p, irrigation, amendment_1, amendment_2)
         st.subheader("Field Emission Results (kg/ha/season)")
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("🔥 Methane (CH₄)", f"{emissions['CH4']:,} kg/ha/season")
             st.metric("⚡ Nitrous Oxide (N₂O)", f"{emissions['N2O']:,} kg/ha/season")
         with col2:
             st.metric("💧 Phosphate (PO₄)", f"{emissions['PO4']:,} kg/ha/season")
             st.metric("💦 Nitrate (NO₃)", f"{emissions['NO3']:,} kg/ha/season")
-        
+        with col3:
+            st.metric("🌬️ Ammonia (NH₃)", f"{emissions['NH3']:,} kg/ha/season")
+
+        # Visual gauges – emissions vs Fully-Flooded upper-bound benchmark (max N=150, max P=60)
+        bench = compute_field_emissions(150, 60, "Fully Flooded", "None", "None")
+        st.markdown("#### 📉 Emissions vs Fully-Flooded Upper-Bound Benchmark")
+        st.caption("Each ring shows your emission relative to the maximum-input, fully-flooded baseline.")
+        g1, g2, g3, g4, g5 = st.columns(5)
+        gauges = [
+            ("CH₄", "🔥", emissions["CH4"], bench["CH4"], "kg/ha", "{:,.1f}"),
+            ("N₂O", "⚡", emissions["N2O"], bench["N2O"], "kg/ha", "{:,.3f}"),
+            ("NO₃", "💦", emissions["NO3"], bench["NO3"], "kg/ha", "{:,.2f}"),
+            ("NH₃", "🌬️", emissions["NH3"], bench["NH3"], "kg/ha", "{:,.2f}"),
+            ("PO₄", "💧", emissions["PO4"], bench["PO4"], "kg/ha", "{:,.2f}"),
+        ]
+        for col, (lbl, ic, val, mx, u, fmt) in zip([g1, g2, g3, g4, g5], gauges):
+            with col:
+                st.markdown(render_value_gauge_html(lbl, val, mx, unit=u, icon=ic, value_fmt=fmt),
+                            unsafe_allow_html=True)
+
         st.markdown("---")
         st.markdown("**💡 Why it matters:** Reducing N₂O and CH₄ emissions improves air quality, reduces climate impact, and can enhance soil health and long-term yield stability.")
         st.markdown("---")
@@ -1516,6 +2361,17 @@ with tab4:
             st.markdown("**Emission Share (%)**")
             st.altair_chart(build_emission_pie_chart(emissions), use_container_width=True)
 
+        st.markdown("---")
+        st.subheader("🔗 Inputs → Emissions → Impacts (Sankey)")
+        st.caption("Follow how each fertiliser/amendment flows into specific emissions and ultimately into climate, eutrophication and acidification impacts.")
+        st.plotly_chart(build_sankey_chart(emissions, synthetic_n, synthetic_p, amendment_1, amendment_2),
+                        use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("🌳 Emission Treemap")
+        st.caption("Hierarchical view: Climate / Eutrophication / Acidification → individual emissions, sized by magnitude.")
+        st.plotly_chart(build_emission_treemap(emissions), use_container_width=True)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 5 — MODEL VALIDATION & INFO
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1545,6 +2401,11 @@ with tab5:
             df_intensity = pd.DataFrame(IMPACT_DATA)
             st.dataframe(df_intensity, use_container_width=True, hide_index=True)
             st.info("💡 **Zinc (Zn)** has dramatically higher ecotoxicity (612.9 CTUe/kg) vs N,P,K (2.7–5.2).")
+
+    st.markdown("---")
+    st.subheader("🔥 Per-kg Footprint Heatmap")
+    st.caption("Color encodes log₁₀ of the impact value. Reveals at a glance where each input dominates.")
+    st.altair_chart(build_impact_heatmap(), use_container_width=True)
 
     st.markdown("---")
 
@@ -1609,4 +2470,5 @@ with st.container():
     ]
     for col, logo in zip(logo_cols, logo_files):
         with col:
-            st.image(logo, width=2000)
+            if os.path.exists(logo):
+                st.image(logo, use_container_width=True)
