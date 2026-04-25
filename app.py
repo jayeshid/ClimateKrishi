@@ -14,6 +14,14 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    :root {
+        --ck-surface: rgba(255, 255, 255, 0.82);
+        --ck-surface-strong: rgba(255, 255, 255, 0.94);
+        --ck-border: rgba(15, 23, 42, 0.10);
+        --ck-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
+        --ck-shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.07);
+    }
+
     body {
         background: linear-gradient(180deg, #f7fdf8 0%, #eafaf1 40%, #ffffff 100%);
         color: #1f2937;
@@ -26,6 +34,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 0.5rem;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        border: 1px solid var(--ck-border);
     }
 
     .stTabs [data-baseweb="tab-list"] button {
@@ -40,6 +49,118 @@ st.markdown("""
         background: linear-gradient(135deg, #16a34a 0%, #0f766e 100%);
         color: white !important;
         box-shadow: 0 12px 35px rgba(16, 185, 129, 0.15);
+    }
+
+    .stTabs [role="tabpanel"] {
+        background: linear-gradient(180deg, var(--ck-surface-strong) 0%, var(--ck-surface) 100%);
+        border: 1px solid var(--ck-border);
+        border-radius: 18px;
+        padding: 1rem 1.1rem 1.25rem;
+        box-shadow: var(--ck-shadow);
+    }
+
+    .stTabs [role="tabpanel"] h3 {
+        color: #0f172a;
+        letter-spacing: 0.1px;
+    }
+
+    .stMainBlockContainer.block-container {
+        padding-left: clamp(1rem, 3vw, 5rem) !important;
+        padding-right: clamp(1rem, 3vw, 5rem) !important;
+        padding-top: clamp(1.25rem, 3vw, 3rem) !important;
+    }
+
+    [data-testid="stHorizontalBlock"] {
+        row-gap: clamp(0.65rem, 1.15vw, 1rem) !important;
+        column-gap: clamp(0.65rem, 1.15vw, 1rem) !important;
+    }
+
+    .ck-feature-card {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 20px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+        min-height: clamp(170px, 20vw, 210px);
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.55rem;
+    }
+
+    .ck-feature-card h4,
+    .ck-feature-card p {
+        margin: 0;
+    }
+
+    .ck-scenario-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 1rem 1.05rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+        min-height: 132px;
+    }
+
+    .ck-scenario-card + .ck-scenario-card {
+        margin-top: 0.65rem;
+    }
+
+    .ck-scenario-head {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .ck-scenario-accent {
+        width: 10px;
+        height: 44px;
+        border-radius: 999px;
+        flex: 0 0 10px;
+    }
+
+    .ck-scenario-card h4,
+    .ck-scenario-card p {
+        margin: 0;
+    }
+
+    @media (max-width: 900px) {
+        .stTabs [data-baseweb="tab-list"] {
+            padding: 0.4rem;
+        }
+
+        .stTabs [data-baseweb="tab-list"] button {
+            padding: 0.55rem 0.9rem;
+            font-size: 0.92rem;
+        }
+
+        .stTabs [role="tabpanel"] {
+            padding: 0.9rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .stMainBlockContainer.block-container {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 0.9rem !important;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .stTabs [data-baseweb="tab-list"] button {
+            flex: 0 0 auto;
+        }
+
+        .ck-feature-card {
+            min-height: auto;
+        }
     }
 
     .stButton button {
@@ -57,6 +178,44 @@ st.markdown("""
         box-shadow: 0 14px 30px rgba(16, 185, 129, 0.22);
     }
 
+    .stRadio [role="radiogroup"] {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 14px;
+        padding: 0.35rem 0.45rem;
+        box-shadow: var(--ck-shadow-soft);
+    }
+
+    .stRadio [role="radiogroup"] > label {
+        border-radius: 12px;
+        padding: 0.3rem 0.55rem;
+        transition: background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .stRadio [role="radiogroup"] > label:has(input:checked) {
+        background: rgba(16, 185, 129, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.24);
+    }
+
+    [data-testid="stNumberInputContainer"] [data-baseweb="input"] {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .stAlert [data-testid="stAlertContainer"] {
+        border-radius: 14px;
+        box-shadow: var(--ck-shadow-soft);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(148,163,184,0.12), rgba(148,163,184,0.45), rgba(148,163,184,0.12));
+    }
+
     .css-1l02zno {
         background: rgba(255,255,255,0.9);
         border-radius: 18px;
@@ -65,9 +224,56 @@ st.markdown("""
 
     .stMetric {
         border-radius: 18px;
-        background: rgba(255,255,255,0.95);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,253,244,0.96) 100%);
         padding: 1rem 1.2rem;
-        border-left: 4px solid #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.28);
+        outline: 1px solid rgba(5, 150, 105, 0.14);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255,255,255,0.75);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .stMetric:hover {
+        transform: translateY(-1px);
+        border-color: rgba(16, 185, 129, 0.45);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.13), 0 0 0 2px rgba(16, 185, 129, 0.10);
+    }
+
+    .ck-winner-wrap {
+        height: 100%;
+        min-height: 94px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ck-winner-badge {
+        width: 100%;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: 0.55rem 0.7rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.9);
+        color: #0f172a;
+    }
+
+    .ck-winner-badge.win-a {
+        background: linear-gradient(180deg, rgba(219, 252, 231, 0.96) 0%, rgba(187, 247, 208, 0.9) 100%);
+        border-color: rgba(22, 163, 74, 0.35);
+        color: #166534;
+    }
+
+    .ck-winner-badge.win-b {
+        background: linear-gradient(180deg, rgba(254, 240, 138, 0.94) 0%, rgba(253, 224, 71, 0.9) 100%);
+        border-color: rgba(202, 138, 4, 0.35);
+        color: #854d0e;
+    }
+
+    .ck-winner-badge.win-tie {
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.95) 0%, rgba(203, 213, 225, 0.9) 100%);
+        border-color: rgba(100, 116, 139, 0.35);
+        color: #334155;
     }
 
     .css-1avcm0n {
@@ -313,6 +519,21 @@ def build_comparison_dataframe(outA, outB):
     })
 
 
+def build_winner_badge(value_a, value_b):
+    """Return styled winner badge HTML for comparison columns."""
+    if value_a < value_b:
+        label = "Lower: A"
+        klass = "win-a"
+    elif value_b < value_a:
+        label = "Lower: B"
+        klass = "win-b"
+    else:
+        label = "Tie"
+        klass = "win-tie"
+
+    return f"<div class='ck-winner-wrap'><div class='ck-winner-badge {klass}'>{label}</div></div>"
+
+
 def style_chart(chart):
     return chart.configure_view(
         strokeOpacity=0
@@ -383,6 +604,151 @@ def build_blend_chart(conv_out, org_out):
     return style_chart(chart)
 
 
+def build_live_blend_index_chart(conv_out, blend_out, org_out):
+    """Build slider-reactive chart with values indexed to Conventional=100."""
+    categories = [
+        "Global Warming",
+        "Freshwater Eutrophication",
+        "Terrestrial Acidification",
+        "Terrestrial Ecotoxicity",
+    ]
+
+    rows = []
+    scenarios = [
+        ("Conventional", conv_out),
+        ("Blend", blend_out),
+        ("Organic", org_out),
+    ]
+    for idx, category in enumerate(categories):
+        base = conv_out[idx]
+        for scenario, values in scenarios:
+            index_value = (values[idx] / base * 100) if base != 0 else 0
+            rows.append({
+                "Impact Category": category,
+                "Scenario": scenario,
+                "Index (Conv=100)": index_value,
+            })
+
+    df = pd.DataFrame(rows)
+    chart = alt.Chart(df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+        y=alt.Y(
+            "Impact Category:N",
+            sort=["Global Warming", "Freshwater Eutrophication", "Terrestrial Acidification", "Terrestrial Ecotoxicity"],
+            title=None,
+        ),
+        x=alt.X("Index (Conv=100):Q", title="Indexed impact (Conventional = 100)"),
+        color=alt.Color(
+            "Scenario:N",
+            legend=None,
+            scale=alt.Scale(
+                domain=["Conventional", "Blend", "Organic"],
+                range=["#1f77b4", "#f97316", "#16a34a"],
+            ),
+        ),
+        tooltip=[
+            "Impact Category",
+            "Scenario",
+            alt.Tooltip("Index (Conv=100):Q", format=".1f"),
+        ],
+    ).properties(height=220, width=250)
+
+    faceted = chart.facet(
+        column=alt.Column(
+            "Scenario:N",
+            sort=["Conventional", "Blend", "Organic"],
+            header=alt.Header(labelFontSize=12, labelColor="#0f172a", title=None),
+        )
+    ).resolve_scale(x="independent")
+
+    return style_chart(faceted).properties(title="Live Impact Index (updates with slider)")
+
+
+def build_blend_frontier_chart(conv_out, org_out, conv_cost, org_cost, selected_alpha):
+    """Show cost-climate frontier across blend percentages."""
+    rows = []
+    for alpha in np.linspace(0, 1, 11):
+        rows.append({
+            "Organic %": alpha * 100,
+            "Cost (INR/ha)": (1 - alpha) * conv_cost + alpha * org_cost,
+            "GWP (kg CO2-eq)": (1 - alpha) * conv_out[0] + alpha * org_out[0],
+            "Selected": "Selected" if np.isclose(alpha, selected_alpha) else "Other",
+        })
+
+    frontier_df = pd.DataFrame(rows)
+    line = alt.Chart(frontier_df).mark_line(strokeWidth=2.5, color="#0f766e").encode(
+        x=alt.X("Cost (INR/ha):Q", title="Input Cost (INR/ha)"),
+        y=alt.Y("GWP (kg CO2-eq):Q", title="Global Warming Potential (kg CO2-eq)"),
+    )
+
+    points = alt.Chart(frontier_df).mark_circle(size=110).encode(
+        x="Cost (INR/ha):Q",
+        y="GWP (kg CO2-eq):Q",
+        color=alt.Color("Organic %:Q", title="Organic blend (%)", scale=alt.Scale(scheme="teals")),
+        tooltip=[
+            alt.Tooltip("Organic %:Q", format=".0f"),
+            alt.Tooltip("Cost (INR/ha):Q", format=",.0f"),
+            alt.Tooltip("GWP (kg CO2-eq):Q", format=",.2f"),
+        ],
+    )
+
+    selected = alt.Chart(frontier_df[frontier_df["Selected"] == "Selected"]).mark_point(
+        shape="diamond", size=260, filled=True, color="#f97316"
+    ).encode(
+        x="Cost (INR/ha):Q",
+        y="GWP (kg CO2-eq):Q",
+        tooltip=[
+            alt.Tooltip("Organic %:Q", format=".0f"),
+            alt.Tooltip("Cost (INR/ha):Q", format=",.0f"),
+            alt.Tooltip("GWP (kg CO2-eq):Q", format=",.2f"),
+        ],
+    )
+
+    return style_chart((line + points + selected).properties(height=350, width=720, title="Cost-Climate Trade-off Frontier"))
+
+
+def build_impact_delta_chart(conv_out, blend_out):
+    """Show percentage change of each impact category vs conventional baseline."""
+    categories = [
+        "Global Warming",
+        "Freshwater Eutrophication",
+        "Terrestrial Acidification",
+        "Terrestrial Ecotoxicity",
+    ]
+    rows = []
+    for idx, cat in enumerate(categories):
+        change_pct = ((blend_out[idx] - conv_out[idx]) / conv_out[idx] * 100) if conv_out[idx] != 0 else 0.0
+        rows.append({
+            "Impact Category": cat,
+            "Change vs Conventional (%)": change_pct,
+            "Direction": "Lower than Conv (better)" if change_pct < 0 else "Higher than Conv (worse)",
+        })
+
+    delta_df = pd.DataFrame(rows)
+    chart = alt.Chart(delta_df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+        y=alt.Y(
+            "Impact Category:N",
+            sort=["Global Warming", "Freshwater Eutrophication", "Terrestrial Acidification", "Terrestrial Ecotoxicity"],
+            title=None,
+        ),
+        x=alt.X("Change vs Conventional (%):Q", title="Change vs Conventional (%)"),
+        color=alt.Color(
+            "Direction:N",
+            title="Direction",
+            scale=alt.Scale(
+                domain=["Lower than Conv (better)", "Higher than Conv (worse)"],
+                range=["#16a34a", "#ef4444"],
+            ),
+        ),
+        tooltip=[
+            "Impact Category",
+            alt.Tooltip("Change vs Conventional (%):Q", format="+.1f"),
+            "Direction",
+        ],
+    ).properties(height=280, width=720, title="Impact Change vs Conventional Baseline")
+
+    return style_chart(chart)
+
+
 def build_comparison_chart(df):
     stacked = df.melt(id_vars=["Impact Category"], value_vars=["Combination A", "Combination B"], var_name="Combination", value_name="Value")
     chart = alt.Chart(stacked).mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5).encode(
@@ -439,6 +805,65 @@ def build_emission_pie_chart(emissions):
     return style_chart(pie)
 
 
+def build_ccts_source_chart(result):
+    """Show how much each amendment contributes to SOC credits after buffer."""
+    source_df = pd.DataFrame({
+        "Source": ["Farm Yard Manure", "Compost"],
+        "Credits (t CO2-eq/ha)": [result["fym_credits_tco2"], result["compost_credits_tco2"]],
+    })
+
+    chart = alt.Chart(source_df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+        x=alt.X("Source:N", sort=["Farm Yard Manure", "Compost"], title=None),
+        y=alt.Y("Credits (t CO2-eq/ha):Q", title="Credits (t CO2-eq/ha)"),
+        color=alt.Color("Source:N", legend=None, scale=alt.Scale(range=["#16a34a", "#0ea5e9"])),
+        tooltip=["Source", alt.Tooltip("Credits (t CO2-eq/ha):Q", format=".3f")],
+    ).properties(title="Credit Contribution by Input", height=300)
+    return style_chart(chart)
+
+
+def build_ccts_buffer_chart(result):
+    """Compare SOC before and after permanence buffer and show withheld amount."""
+    buffer_df = pd.DataFrame({
+        "Stage": ["Before Buffer", "After Buffer", "Buffer Withheld"],
+        "t CO2-eq/ha": [
+            result["soc_before_buffer_tco2"],
+            result["credits_tco2"],
+            result["buffer_withheld_tco2"],
+        ],
+    })
+
+    chart = alt.Chart(buffer_df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+        x=alt.X("Stage:N", sort=["Before Buffer", "After Buffer", "Buffer Withheld"], title=None),
+        y=alt.Y("t CO2-eq/ha:Q", title="t CO2-eq/ha"),
+        color=alt.Color(
+            "Stage:N",
+            legend=None,
+            scale=alt.Scale(
+                domain=["Before Buffer", "After Buffer", "Buffer Withheld"],
+                range=["#0ea5e9", "#16a34a", "#f59e0b"],
+            ),
+        ),
+        tooltip=["Stage", alt.Tooltip("t CO2-eq/ha:Q", format=".3f")],
+    ).properties(title="Permanence Buffer Effect", height=300)
+    return style_chart(chart)
+
+
+def build_ccts_value_chart(result):
+    """Display estimated market value range per hectare."""
+    value_df = pd.DataFrame({
+        "Scenario": ["Low Price", "High Price"],
+        "Value (INR/ha)": [result["value_low_inr"], result["value_high_inr"]],
+    })
+
+    chart = alt.Chart(value_df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+        x=alt.X("Scenario:N", sort=["Low Price", "High Price"], title=None),
+        y=alt.Y("Value (INR/ha):Q", title="Estimated Value (INR/ha)"),
+        color=alt.Color("Scenario:N", legend=None, scale=alt.Scale(range=["#94a3b8", "#10b981"])),
+        tooltip=["Scenario", alt.Tooltip("Value (INR/ha):Q", format=",.0f")],
+    ).properties(title="Estimated Credit Value Range", height=300)
+    return style_chart(chart)
+
+
 def calculate_soc_credits(manure, compost, buffer_pct):
     """Estimate soil-carbon-only credit potential from FYM and compost inputs."""
     c_to_co2 = 3.667
@@ -449,12 +874,21 @@ def calculate_soc_credits(manure, compost, buffer_pct):
 
     soc_fym_kgc = manure * fym_dm * fym_c * fym_h
     soc_compost_kgc = compost * compost_dm * compost_c * compost_h
-    soc_total_tco2 = ((soc_fym_kgc + soc_compost_kgc) / 1000) * c_to_co2
+    soc_fym_tco2 = (soc_fym_kgc / 1000) * c_to_co2
+    soc_compost_tco2 = (soc_compost_kgc / 1000) * c_to_co2
+
+    soc_total_tco2 = soc_fym_tco2 + soc_compost_tco2
     soc_credits_tco2 = soc_total_tco2 * (1 - buffer_pct / 100)
+    buffer_withheld_tco2 = soc_total_tco2 - soc_credits_tco2
 
     return {
+        "fym_soc_tco2": soc_fym_tco2,
+        "compost_soc_tco2": soc_compost_tco2,
+        "fym_credits_tco2": soc_fym_tco2 * (1 - buffer_pct / 100),
+        "compost_credits_tco2": soc_compost_tco2 * (1 - buffer_pct / 100),
         "soc_before_buffer_tco2": soc_total_tco2,
         "credits_tco2": soc_credits_tco2,
+        "buffer_withheld_tco2": buffer_withheld_tco2,
         "value_low_inr": soc_credits_tco2 * 600,
         "value_high_inr": soc_credits_tco2 * 900,
     }
@@ -475,11 +909,6 @@ with st.container():
         st.markdown("""
         **Fast insights, actionable comparisons, and cost-aware recommendations for rice farmers and agronomists.**
         """)
-        c1, c2 = st.columns([1,1])
-        with c1:
-            st.button("Start Predicting")
-        with c2:
-            st.button("View Documentation")
     with hero_right:
         st.markdown("""
         <div style='background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%); border-radius: 28px; padding: 2rem; text-align: center; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);'>
@@ -494,35 +923,35 @@ with st.container():
     card1, card2, card3, card4, card5 = st.columns(5)
     with card1:
         st.markdown("""
-        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+        <div class='ck-feature-card'>
             <h4 style='color:#047857;'>Real-time soil insights</h4>
             <p style='color:#334155;'>Understand the environmental footprint of each nutrient input.</p>
         </div>
         """, unsafe_allow_html=True)
     with card2:
         st.markdown("""
-        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+        <div class='ck-feature-card'>
             <h4 style='color:#047857;'>LCA Predictor</h4>
             <p style='color:#334155;'>Compare conventional and organic strategies at a glance.</p>
         </div>
         """, unsafe_allow_html=True)
     with card3:
         st.markdown("""
-        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+        <div class='ck-feature-card'>
             <h4 style='color:#047857;'>Field Emission Calculator</h4>
             <p style='color:#334155;'>Estimate CH₄, N₂O and nutrient emissions by irrigation type.</p>
         </div>
         """, unsafe_allow_html=True)
     with card4:
         st.markdown("""
-        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+        <div class='ck-feature-card'>
             <h4 style='color:#047857;'>Carbon Credit Potential</h4>
             <p style='color:#334155;'>Estimate soil-carbon credit potential and value per hectare.</p>
         </div>
         """, unsafe_allow_html=True)
     with card5:
         st.markdown("""
-        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+        <div class='ck-feature-card'>
             <h4 style='color:#047857;'>Model Validation</h4>
             <p style='color:#334155;'>Built with real-world rice cultivation datasets from ICAR-IIRR & KVK.</p>
         </div>
@@ -533,7 +962,7 @@ st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🔬 LCA Impact Predictor",
     "🎚️ Organic–Conventional Gradient",
-    "🌱 Carbon Credit Potential",
+    "💲 Carbon Credit Potential",
     "🌱 Field Emission Calculator",
     "📊 Model Information",
 ])
@@ -696,16 +1125,14 @@ with tab1:
                 units      = ["kg CO₂-eq", "kg P-eq", "kg SO₂-eq", "CTUe"]
                 formats    = ["{:,.2f}", "{:.6f}", "{:.4f}", "{:,.2f}"]
                 for i, cat in enumerate(categories):
-                    col1, col2, col3 = st.columns([2,2,1])
+                    col1, col2, col3 = st.columns([2, 2, 1.15])
                     with col1:
                         st.metric(f"{cat} — A", f"{formats[i].format(outA[i])} {units[i]}")
                     with col2:
                         st.metric(f"{cat} — B", f"{formats[i].format(outB[i])} {units[i]}")
                     with col3:
-                        winner = "🔽 A" if outA[i] < outB[i] else "🔽 B" if outB[i] < outA[i] else "="
-                        st.markdown(f"<br><b>{winner}</b>", unsafe_allow_html=True)
+                        st.markdown(build_winner_badge(outA[i], outB[i]), unsafe_allow_html=True)
                 
-                st.markdown("**Impact Breakdown**")
                 compare_df = build_comparison_dataframe(outA, outB)
                 st.altair_chart(build_comparison_chart(compare_df), use_container_width=True)
 
@@ -748,16 +1175,14 @@ with tab1:
                 units      = ["kg CO₂-eq", "kg P-eq", "kg SO₂-eq", "CTUe"]
                 formats    = ["{:,.2f}", "{:.6f}", "{:.4f}", "{:,.2f}"]
                 for i, cat in enumerate(categories):
-                    col1, col2, col3 = st.columns([2,2,1])
+                    col1, col2, col3 = st.columns([2, 2, 1.15])
                     with col1:
                         st.metric(f"{cat} — A", f"{formats[i].format(outA[i])} {units[i]}")
                     with col2:
                         st.metric(f"{cat} — B", f"{formats[i].format(outB[i])} {units[i]}")
                     with col3:
-                        winner = "🔽 A" if outA[i] < outB[i] else "🔽 B" if outB[i] < outA[i] else "="
-                        st.markdown(f"<br><b>{winner}</b>", unsafe_allow_html=True)
+                        st.markdown(build_winner_badge(outA[i], outB[i]), unsafe_allow_html=True)
                 
-                st.markdown("**Impact Breakdown**")
                 compare_df = build_comparison_dataframe(outA, outB)
                 st.altair_chart(build_comparison_chart(compare_df), use_container_width=True)
 
@@ -823,12 +1248,12 @@ with tab2:
         org_cost   = calc_cost(N, P, K, Zn, manure, compost, 1.0)
         blend_cost = calc_cost(N, P, K, Zn, manure, compost, alpha)
 
-        col_sidebar, col_main = st.columns([1, 3])
+        col_sidebar, col_main = st.columns([1.05, 2.95], gap="medium")
         with col_sidebar:
             st.markdown("""
-                <div style='background:white; border-radius:24px; padding:1.2rem; box-shadow:0 18px 35px rgba(15,23,42,0.08); margin-bottom:1rem;'>
-                    <div style='display:flex; align-items:center; gap:0.75rem;'>
-                        <div style='width:12px; height:48px; background:#1d4ed8; border-radius:999px;'></div>
+                <div class='ck-scenario-card'>
+                    <div class='ck-scenario-head'>
+                        <div class='ck-scenario-accent' style='background:#1d4ed8;'></div>
                         <div>
                             <h4 style='margin:0; color:#1d4ed8;'>Conventional</h4>
                             <p style='margin:0.35rem 0 0; color:#475569;'>Current baseline synthetic system.</p>
@@ -839,9 +1264,9 @@ with tab2:
                 </div>
             """.format(conv_gwp=conv_out[0], conv_cost=conv_cost), unsafe_allow_html=True)
             st.markdown("""
-                <div style='background:white; border-radius:24px; padding:1.2rem; box-shadow:0 18px 35px rgba(15,23,42,0.08); margin-bottom:1rem;'>
-                    <div style='display:flex; align-items:center; gap:0.75rem;'>
-                        <div style='width:12px; height:48px; background:#f97316; border-radius:999px;'></div>
+                <div class='ck-scenario-card'>
+                    <div class='ck-scenario-head'>
+                        <div class='ck-scenario-accent' style='background:#f97316;'></div>
                         <div>
                             <h4 style='margin:0; color:#b45309;'>Blend</h4>
                             <p style='margin:0.35rem 0 0; color:#475569;'>Current organic/conventional transition.</p>
@@ -852,9 +1277,9 @@ with tab2:
                 </div>
             """.format(blend_gwp=blend_out[0], blend_cost=blend_cost), unsafe_allow_html=True)
             st.markdown("""
-                <div style='background:white; border-radius:24px; padding:1.2rem; box-shadow:0 18px 35px rgba(15,23,42,0.08);'>
-                    <div style='display:flex; align-items:center; gap:0.75rem;'>
-                        <div style='width:12px; height:48px; background:#16a34a; border-radius:999px;'></div>
+                <div class='ck-scenario-card'>
+                    <div class='ck-scenario-head'>
+                        <div class='ck-scenario-accent' style='background:#16a34a;'></div>
                         <div>
                             <h4 style='margin:0; color:#15803d;'>Organic</h4>
                             <p style='margin:0.35rem 0 0; color:#475569;'>Full organic amendment values.</p>
@@ -883,6 +1308,15 @@ with tab2:
             with col_kpi4:
                 eutroph_reduction = ((conv_out[1] - blend_out[1]) / conv_out[1] * 100) if conv_out[1] != 0 else 0
                 st.metric("Eutrophication", f"{eutroph_reduction:+.1f}%", delta_color="inverse")
+
+            st.markdown("###### Live Blend Snapshot")
+            blend_df = pd.concat([
+                build_impact_dataframe(conv_out, "Conventional"),
+                build_impact_dataframe(blend_out, "Blend"),
+                build_impact_dataframe(org_out, "Organic")
+            ])
+            st.altair_chart(build_live_blend_index_chart(conv_out, blend_out, org_out), use_container_width=True)
+            st.caption(f"This chart updates instantly for the selected blend ({int(alpha * 100)}% organic).")
         
         st.markdown("---")
 
@@ -899,11 +1333,6 @@ with tab2:
 
         st.markdown("---")
 
-        blend_df = pd.concat([
-            build_impact_dataframe(conv_out, "Conventional"),
-            build_impact_dataframe(blend_out, "Blend") ,
-            build_impact_dataframe(org_out, "Organic")
-        ])
         st.altair_chart(build_gradient_impact_chart(blend_df), use_container_width=True)
 
         st.markdown("---")
@@ -921,6 +1350,17 @@ with tab2:
         st.markdown("---")
         st.subheader("📈 Impact Trend Across Organic Blend")
         st.altair_chart(build_blend_chart(conv_out, org_out), use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("🧭 Blend Decision Charts")
+        frontier_col, delta_col = st.columns(2, gap="medium")
+        with frontier_col:
+            st.altair_chart(
+                build_blend_frontier_chart(conv_out, org_out, conv_cost, org_cost, alpha),
+                use_container_width=True,
+            )
+        with delta_col:
+            st.altair_chart(build_impact_delta_chart(conv_out, blend_out), use_container_width=True)
 
         gwp_reduction = conv_out[0] - blend_out[0]
         if gwp_reduction > 0:
@@ -1004,6 +1444,16 @@ with tab3:
     st.caption(
         "Credits are based on stabilized soil carbon from FYM and compost inputs, adjusted using the permanence buffer."
     )
+
+    st.markdown("---")
+    st.markdown("#### Visual Insights")
+    chart_col1, chart_col2 = st.columns(2)
+    with chart_col1:
+        st.altair_chart(build_ccts_source_chart(result), use_container_width=True)
+    with chart_col2:
+        st.altair_chart(build_ccts_buffer_chart(result), use_container_width=True)
+
+    st.altair_chart(build_ccts_value_chart(result), use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — FIELD EMISSION CALCULATOR
