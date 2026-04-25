@@ -10,8 +10,16 @@ import plotly.graph_objects as go
 st.set_page_config(
     page_title="CLIMATEKRISHI AI : An AI-Powered Platform for Climate Smart Decision Making in Rice Farming",
     page_icon="🌾",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed",
 )
+
+st.markdown("""
+<style>
+    [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    section[data-testid="stSidebar"] { width: 0 !important; min-width: 0 !important; }
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -393,41 +401,6 @@ def load_models():
     return model_conventional, scaler_conventional, model_organic, scaler_organic, has_organic
 
 model_conventional, scaler_conventional, model_organic, scaler_organic, has_organic = load_models()
-
-# ── Sidebar Info ────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### 🌾 CLIMATEKRISHI AI")
-    st.markdown("---")
-    st.markdown("#### Quick Start")
-    st.markdown("""
-    - Choose your system and mode.
-    - Enter recommended fertiliser or amendment rates.
-    - Click Predict or Compare for instant insights.
-    """)
-    st.markdown("---")
-    st.markdown("#### Model Status")
-    status_col1, status_col2 = st.columns(2)
-    with status_col1:
-        if model_conventional:
-            st.success("Conventional")
-        else:
-            st.error("Conventional")
-    with status_col2:
-        if has_organic:
-            st.success("Organic")
-        else:
-            st.warning("Organic")
-    st.markdown("---")
-    st.markdown("**Data Source:** ICAR-IIRR & KVK Medak, Telangana")
-    st.markdown("**Method:** Ridge Regression, LCA-based")
-    st.markdown("---")
-    st.markdown("#### What this app does")
-    st.markdown("""
-    - Compare conventional and organic impact profiles.
-    - Explore blend transitions and costs.
-    - Estimate field emissions by irrigation and amendments.
-    - View model validation and input intensity.
-    """)
 
 # ── Helper Constants ───────────────────────────────────────────────────────────
 CONV_RANGES = {'N': (120, 150), 'P': (40, 60), 'K': (30, 40), 'Zn': (10, 30)}
