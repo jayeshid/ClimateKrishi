@@ -438,6 +438,27 @@ def build_emission_pie_chart(emissions):
 
     return style_chart(pie)
 
+
+def calculate_soc_credits(manure, compost, buffer_pct):
+    """Estimate soil-carbon-only credit potential from FYM and compost inputs."""
+    c_to_co2 = 3.667
+
+    # Stabilized carbon assumptions for amendments.
+    fym_dm, fym_c, fym_h = 0.25, 0.25, 0.25
+    compost_dm, compost_c, compost_h = 0.55, 0.25, 0.35
+
+    soc_fym_kgc = manure * fym_dm * fym_c * fym_h
+    soc_compost_kgc = compost * compost_dm * compost_c * compost_h
+    soc_total_tco2 = ((soc_fym_kgc + soc_compost_kgc) / 1000) * c_to_co2
+    soc_credits_tco2 = soc_total_tco2 * (1 - buffer_pct / 100)
+
+    return {
+        "soc_before_buffer_tco2": soc_total_tco2,
+        "credits_tco2": soc_credits_tco2,
+        "value_low_inr": soc_credits_tco2 * 600,
+        "value_high_inr": soc_credits_tco2 * 900,
+    }
+
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN UI
 # ══════════════════════════════════════════════════════════════════════════════
@@ -470,7 +491,7 @@ with st.container():
 
 st.markdown("---")
 with st.container():
-    card1, card2, card3, card4 = st.columns(4)
+    card1, card2, card3, card4, card5 = st.columns(5)
     with card1:
         st.markdown("""
         <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
@@ -495,6 +516,13 @@ with st.container():
     with card4:
         st.markdown("""
         <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
+            <h4 style='color:#047857;'>Carbon Credit Potential</h4>
+            <p style='color:#334155;'>Estimate soil-carbon credit potential and value per hectare.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with card5:
+        st.markdown("""
+        <div style='background:white; padding:1.2rem; border-radius:20px; box-shadow:0 16px 30px rgba(15,23,42,0.08);'>
             <h4 style='color:#047857;'>Model Validation</h4>
             <p style='color:#334155;'>Built with real-world rice cultivation datasets from ICAR-IIRR & KVK.</p>
         </div>
@@ -502,7 +530,13 @@ with st.container():
 
 st.markdown("---")
 # ── Tab Layout ─────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["🔬 LCA Impact Predictor", "🎚️ Organic–Conventional Gradient", "🌱 Field Emission Calculator", "📊 Model Information"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "🔬 LCA Impact Predictor",
+    "🎚️ Organic–Conventional Gradient",
+    "🌱 Carbon Credit Potential",
+    "🌱 Field Emission Calculator",
+    "📊 Model Information",
+])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — LCA IMPACT PREDICTOR
@@ -915,9 +949,66 @@ with tab2:
         st.error("❌ Required models not fully available. Need both conventional and organic models for gradient analysis.")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — FIELD EMISSION CALCULATOR
+# TAB 3 — CARBON CREDIT POTENTIAL
 # ══════════════════════════════════════════════════════════════════════════════
 with tab3:
+    st.subheader("Carbon Credit Potential (CCTS)")
+    st.caption("Soil-carbon credits only (1 ha basis), shown in t CO2-eq/ha")
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        cc_manure = st.number_input(
+            "Farm Yard Manure (kg/ha)",
+            min_value=0.0,
+            value=10000.0,
+            step=100.0,
+            key="cc_manure",
+        )
+    with col2:
+        cc_compost = st.number_input(
+            "Compost (kg/ha)",
+            min_value=0.0,
+            value=1500.0,
+            step=50.0,
+            key="cc_compost",
+        )
+
+    cc_warn = validate_organic(cc_manure, cc_compost)
+    if cc_warn:
+        st.warning("⚠️ Inputs outside recommended organic ranges:\n\n" + "\n".join(f"- {w}" for w in cc_warn))
+
+    buffer_pct = st.slider(
+        "Permanence Buffer (%)",
+        min_value=10,
+        max_value=30,
+        value=20,
+        step=1,
+        help="Applied to account for uncertainty and reversal risk.",
+        key="cc_buffer",
+    )
+
+    result = calculate_soc_credits(cc_manure, cc_compost, buffer_pct)
+
+    kpi1, kpi2 = st.columns(2)
+    with kpi1:
+        st.metric("🌱 Soil Carbon Credits", f"{result['credits_tco2']:.3f} t CO2-eq/ha")
+    with kpi2:
+        st.metric("📦 SOC Stored (Before Buffer)", f"{result['soc_before_buffer_tco2']:.3f} t CO2-eq/ha")
+
+    st.markdown("##### Estimated Value (per ha, CCTS)")
+    st.info(
+        f"₹{result['value_low_inr']:,.0f} - ₹{result['value_high_inr']:,.0f}\n\n"
+        "Based on ₹600-₹900 per t CO2-eq."
+    )
+    st.caption(
+        "Credits are based on stabilized soil carbon from FYM and compost inputs, adjusted using the permanence buffer."
+    )
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 4 — FIELD EMISSION CALCULATOR
+# ══════════════════════════════════════════════════════════════════════════════
+with tab4:
     st.subheader("Field Emission Calculator")
     st.markdown("Calculate direct field emissions from fertiliser application based on IPCC and SALCA methodologies.")
     st.markdown("---")
@@ -976,9 +1067,9 @@ with tab3:
             st.altair_chart(build_emission_pie_chart(emissions), use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 4 — MODEL VALIDATION & INFO
+# TAB 5 — MODEL VALIDATION & INFO
 # ══════════════════════════════════════════════════════════════════════════════
-with tab4:
+with tab5:
     col1, col2 = st.columns(2)
 
     with col1:
@@ -1046,6 +1137,8 @@ with tab4:
         **Scripts Available:**
         - `Model-Training.py` — Full training pipeline
         - `evaluate.py` — Model performance evaluation
+        - `Organic evaluate.py` — Organic model evaluation
+        - `Organic LCA script.py` — Organic OpenLCA data generation
         - `predict.py` — Batch prediction utilities
         - `visualise.py` — Visualization and analysis tools
         """)
