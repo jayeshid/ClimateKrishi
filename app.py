@@ -1578,41 +1578,41 @@ def build_inference_card(domain, value, ctx=None, lang="en"):
         title = _t("🔥 Methane (CH₄)", "🔥 मीथेन (CH₄)", "🔥 మీథేన్ (CH₄)", lang, mr="🔥 मिथेन (CH₄)")
         irrig = ctx.get("irrigation", "")
         if irrig == "Alternate Wetting and Drying":
-            extra_en = "You're already using AWD — fine-tune drainage timing and avoid incorporating fresh straw under flood."
-            extra_hi = "आप AWD कर रहे हैं — drainage समय सुधारें और ताज़ा पुआल को पानी में न मिलाएँ।"
-            extra_te = "మీరు AWD వాడుతున్నారు — drainage timing ను చక్కబెట్టండి, ఫ్రెష్ గడ్డిని నీటిలో కలపొద్దు."
-            extra_mr = "तुम्ही AWD वापरत आहात — drainage वेळ सुधारा आणि ताजे पेंढा पाण्यात मिसळवू नका."
+            extra_en = "You're already using AWD (cutting CH₄ by ~30–70% vs continuous flooding) — fine-tune drainage timing and avoid incorporating fresh straw under flood for an extra <b>~10–15%</b> reduction."
+            extra_hi = "आप पहले से AWD कर रहे हैं (continuous flooding की तुलना में CH₄ ~30–70% कम) — drainage समय सुधारें और ताज़ा पुआल पानी में न मिलाएँ — <b>~10–15%</b> और कमी संभव।"
+            extra_te = "మీరు ఇప్పటికే AWD వాడుతున్నారు (continuous flooding తో పోలిస్తే CH₄ ~30–70% తక్కువ) — drainage timing సరిచేసి, ఫ్రెష్ గడ్డిని నీటిలో కలపొద్దు — మరో <b>~10–15%</b> తగ్గింపు."
+            extra_mr = "तुम्ही आधीच AWD वापरत आहात (continuous flooding च्या तुलनेत CH₄ ~30–70% कमी) — drainage वेळ सुधारा आणि ताजे पेंढा पाण्यात मिसळवू नका — आणखी <b>~10–15%</b> कपात शक्य."
         elif irrig == "Rainfed":
-            extra_en = "Rainfed systems already have low CH₄; focus on N management instead."
-            extra_hi = "Rainfed में CH₄ पहले से कम है; ध्यान N प्रबंधन पर दें।"
-            extra_te = "Rainfed లో CH₄ తక్కువ; దృష్టి N management పై పెట్టండి."
-            extra_mr = "Rainfed मध्ये CH₄ आधीच कमी आहे; N व्यवस्थापनावर लक्ष द्या."
+            extra_en = "Rainfed systems already have low CH₄ (~<b>60–80% lower</b> than continuously flooded paddies); focus on N management instead — split urea + neem-coating cuts N₂O by another ~20%."
+            extra_hi = "Rainfed में CH₄ पहले से कम है (~<b>60–80%</b> लगातार सिंचित से कम); ध्यान N प्रबंधन पर दें — split urea + neem-coating से N₂O ~20% कम।"
+            extra_te = "Rainfed లో CH₄ ఇప్పటికే తక్కువ (~<b>60–80%</b> continuous flooding కంటే తక్కువ); దృష్టి N management పై పెట్టండి — split urea + neem-coating తో N₂O ~20% తగ్గింపు."
+            extra_mr = "Rainfed मध्ये CH₄ आधीच कमी आहे (continuous flooding पेक्षा ~<b>60–80% कमी</b>); N व्यवस्थापनावर लक्ष द्या — split urea + neem-coating ने N₂O ~20% कमी."
         else:
-            extra_en = "Practising <b>AWD</b> — draining the field 2–3 times mid-season — is the single biggest CH₄ reducer."
-            extra_hi = "<b>AWD</b> अपनाना — मध्य-सीज़न में 2–3 बार पानी निकालना — CH₄ कम करने का सबसे बड़ा तरीक़ा है।"
-            extra_te = "<b>AWD</b> పద్ధతి — mid-season లో 2–3 సార్లు నీరు తీసేయడం — CH₄ తగ్గించడంలో అతిపెద్ద చర్య."
-            extra_mr = "<b>AWD</b> अवलंबणे — मध्य-हंगामात 2–3 वेळा पाणी काढणे — CH₄ कमी करण्याचा सर्वात मोठा मार्ग आहे."
+            extra_en = "Practising <b>AWD</b> — draining the field 2–3 times mid-season — is the single biggest CH₄ reducer (<b>cuts 30–70%</b>); adding 5 t/ha FYM instead of fresh straw saves another ~10%."
+            extra_hi = "<b>AWD</b> अपनाना — मध्य-सीज़न में 2–3 बार पानी निकालना — CH₄ कम करने का सबसे बड़ा तरीक़ा है (<b>30–70% कमी</b>); ताज़ा पुआल की जगह 5 t/ha FYM डालने से ~10% और बचत।"
+            extra_te = "<b>AWD</b> పద్ధతి — mid-season లో 2–3 సార్లు నీరు తీసేయడం — CH₄ తగ్గించడంలో అతిపెద్ద చర్య (<b>30–70% తగ్గింపు</b>); ఫ్రెష్ గడ్డికి బదులు 5 t/ha FYM వేస్తే మరో ~10% ఆదా."
+            extra_mr = "<b>AWD</b> अवलंबणे — मध्य-हंगामात 2–3 वेळा पाणी काढणे — CH₄ कमी करण्याचा सर्वात मोठा मार्ग आहे (<b>30–70% कपात</b>); ताज्या पेंढ्याऐवजी 5 t/ha शेणखत दिल्यास आणखी ~10% बचत."
         if band == "low":
             paragraph = _t(
-                f"🟢 Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — well below the IPCC default of 200–500 kg/ha for fully-flooded paddies. {extra_en}",
-                f"🟢 आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha से बहुत कम। {extra_hi}",
-                f"🟢 మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha కంటే చాలా తక్కువ. {extra_te}",
+                f"🟢 Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — <b>well below</b> the IPCC default of 200–500 kg/ha for fully-flooded paddies (you're roughly <b>{(1-value/350)*100:.0f}% lower</b> than the 350 kg/ha midpoint). {extra_en}",
+                f"🟢 आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha से <b>बहुत कम</b> (350 kg/ha मिडपॉइंट से लगभग <b>{(1-value/350)*100:.0f}% कम</b>)। {extra_hi}",
+                f"🟢 మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha కంటే <b>చాలా తక్కువ</b> (350 kg/ha మిడ్‌పాయింట్ కంటే ~<b>{(1-value/350)*100:.0f}% తక్కువ</b>). {extra_te}",
                 lang,
-                mr=f"🟢 तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha पेक्षा खूप कमी. {extra_mr}")
+                mr=f"🟢 तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC default 200–500 kg/ha पेक्षा <b>खूप कमी</b> (350 kg/ha मध्यबिंदूपेक्षा सुमारे <b>{(1-value/350)*100:.0f}% कमी</b>). {extra_mr}")
         elif band == "mid":
             paragraph = _t(
-                f"Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq), within the IPCC default 200–500 kg/ha range for flooded paddies. {extra_en}",
-                f"आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) निकल रहा है, जो IPCC default 200–500 kg/ha के बीच है। {extra_hi}",
-                f"మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) విడుదలవుతోంది, IPCC default 200–500 kg/ha రేంజ్‌లో. {extra_te}",
+                f"Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq), within the IPCC default 200–500 kg/ha range for flooded paddies. Adopting AWD here can <b>cut CH₄ by 30–70%</b> (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg/ha saved, worth ₹{value*0.5*27.9*0.0009*1000:,.0f}–₹{value*0.7*27.9*0.0009*1000:,.0f}/ha at CCTS rates). {extra_en}",
+                f"आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) निकल रहा है, जो IPCC default 200–500 kg/ha के बीच है। AWD अपनाने से <b>CH₄ 30–70% कम</b> हो सकता है (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg/ha बचत, CCTS दर पर ₹{value*0.5*27.9*0.0009*1000:,.0f}–₹{value*0.7*27.9*0.0009*1000:,.0f}/ha)। {extra_hi}",
+                f"మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) విడుదలవుతోంది, IPCC default 200–500 kg/ha రేంజ్‌లో. AWD అవలంబిస్తే <b>CH₄ 30–70% తగ్గుతుంది</b> (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg/ha ఆదా, CCTS ధర వద్ద ₹{value*0.5*27.9*0.0009*1000:,.0f}–₹{value*0.7*27.9*0.0009*1000:,.0f}/ha). {extra_te}",
                 lang,
-                mr=f"तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) बाहेर पडत आहे, जे IPCC default 200–500 kg/ha च्या मध्यवर्ती आहे. {extra_mr}")
+                mr=f"तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) बाहेर पडत आहे, जे IPCC default 200–500 kg/ha च्या मध्यवर्ती आहे. AWD स्वीकारल्यास <b>CH₄ 30–70% कमी</b> होऊ शकते (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg/ha बचत, CCTS दराने ₹{value*0.5*27.9*0.0009*1000:,.0f}–₹{value*0.7*27.9*0.0009*1000:,.0f}/ha). {extra_mr}")
         else:
             paragraph = _t(
-                f"⚠️ Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — at the upper end of the IPCC 200–500 kg/ha range. {extra_en} Expect a 30–70% cut on adoption.",
-                f"⚠️ आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 200–500 kg/ha की ऊँची सीमा पर। {extra_hi} 30–70% तक कमी संभव।",
-                f"⚠️ మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 200–500 kg/ha గరిష్ఠ స్థాయిలో. {extra_te} అమలుతో 30–70% తగ్గింపు సాధ్యం.",
+                f"⚠️ Your paddy releases <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — <b>{(value/350-1)*100:.0f}% above</b> the IPCC 350 kg/ha midpoint. {extra_en} Expect a <b>30–70% cut on adoption</b> (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg CH₄/ha saved).",
+                f"⚠️ आपके खेत से <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 350 kg/ha मिडपॉइंट से <b>{(value/350-1)*100:.0f}% ज़्यादा</b>। {extra_hi} <b>30–70% तक कमी</b> संभव (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg CH₄/ha बचत)।",
+                f"⚠️ మీ పొలం నుంచి <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 350 kg/ha మిడ్‌పాయింట్ కంటే <b>{(value/350-1)*100:.0f}% ఎక్కువ</b>. {extra_te} అమలుతో <b>30–70% తగ్గింపు</b> (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg CH₄/ha ఆదా).",
                 lang,
-                mr=f"⚠️ तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 200–500 kg/ha च्या वरच्या टोकाला. {extra_mr} अमलानंतर 30–70% कपात शक्य.")
+                mr=f"⚠️ तुमच्या भातशेतीतून <b>{value:,.1f} kg CH₄/ha/season</b> (= {co2eq:,.0f} kg CO₂-eq) — IPCC 350 kg/ha मध्यबिंदूपेक्षा <b>{(value/350-1)*100:.0f}% जास्त</b>. {extra_mr} अमलानंतर <b>30–70% कपात</b> शक्य (≈ {value*0.3:,.0f}–{value*0.7:,.0f} kg CH₄/ha बचत).")
         refs = cite("ipcc_rice", "gold_awm", "ipcc_ar6")
 
     elif domain == "n2o":
@@ -1654,11 +1654,11 @@ def build_inference_card(domain, value, ctx=None, lang="en"):
             warn_te = "ఇది WHO/BIS పరిమితి కంటే తక్కువ, అయినా మొత్తం N నష్టం yield efficiency ను తగ్గిస్తుంది."
             warn_mr = "हे WHO/BIS मर्यादेखाली आहे, परंतु एकूण N नुकसान yield efficiency कमी करते."
         paragraph = _t(
-            f"{emoji} Approximately <b>{mg_per_l:.1f} mg/L</b> could leach into local groundwater (1,000 m³/ha runoff proxy). WHO drinking-water limit: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_en} Avoid topdressing N before heavy rain and maintain bunds & vegetative buffers.",
-            f"{emoji} लगभग <b>{mg_per_l:.1f} mg/L</b> स्थानीय groundwater में जा सकता है (1,000 m³/ha runoff अनुमान)। WHO सीमा: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>। {warn_hi} भारी बारिश से पहले N न डालें और मेड़ व वनस्पति buffer बनाएँ।",
-            f"{emoji} సుమారు <b>{mg_per_l:.1f} mg/L</b> స్థానిక groundwater లోకి వెళ్ళవచ్చు (1,000 m³/ha runoff అంచనా). WHO పరిమితి: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_te} భారీ వర్షానికి ముందు N వేయొద్దు, బండ్లు మరియు vegetative buffers నిర్వహించండి.",
+            f"{emoji} Approximately <b>{mg_per_l:.1f} mg/L</b> could leach into local groundwater (1,000 m³/ha runoff proxy). WHO drinking-water limit: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_en} Avoid topdressing N before heavy rain and maintain bunds & vegetative buffers — these practices can <b>cut NO₃⁻ leaching by 30–50%</b>, and switching to split-N + neem-coated urea adds another <b>~20%</b> reduction.",
+            f"{emoji} लगभग <b>{mg_per_l:.1f} mg/L</b> स्थानीय groundwater में जा सकता है (1,000 m³/ha runoff अनुमान)। WHO सीमा: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>। {warn_hi} भारी बारिश से पहले N न डालें और मेड़ व वनस्पति buffer बनाएँ — ये उपाय <b>NO₃⁻ leaching 30–50% तक कम</b> करते हैं, और split-N + neem-coated urea से <b>~20%</b> और कमी होती है।",
+            f"{emoji} సుమారు <b>{mg_per_l:.1f} mg/L</b> స్థానిక groundwater లోకి వెళ్ళవచ్చు (1,000 m³/ha runoff అంచనా). WHO పరిమితి: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_te} భారీ వర్షానికి ముందు N వేయొద్దు, బండ్లు మరియు vegetative buffers నిర్వహించండి — ఈ చర్యలు <b>NO₃⁻ leaching ను 30–50% తగ్గిస్తాయి</b>, split-N + neem-coated urea తో మరో <b>~20%</b> తగ్గింపు.",
             lang,
-            mr=f"{emoji} सुमारे <b>{mg_per_l:.1f} mg/L</b> स्थानिक groundwater मध्ये झिरपू शकते (1,000 m³/ha runoff अंदाज). WHO मर्यादा: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_mr} मोठ्या पावसाआधी N टाकू नका आणि बांध व वनस्पती buffers टिकवा.")
+            mr=f"{emoji} सुमारे <b>{mg_per_l:.1f} mg/L</b> स्थानिक groundwater मध्ये झिरपू शकते (1,000 m³/ha runoff अंदाज). WHO मर्यादा: <b>50 mg/L</b>; BIS IS 10500: <b>45 mg/L</b>. {warn_mr} मोठ्या पावसाआधी N टाकू नका आणि बांध व वनस्पती buffers टिकवा — हे उपाय <b>NO₃⁻ झिरप 30–50% कमी</b> करतात, split-N + neem-coated urea ने आणखी <b>~20%</b> कपात.")
         refs = cite("who_no3", "bis")
 
     elif domain == "nh3":
@@ -1678,11 +1678,11 @@ def build_inference_card(domain, value, ctx=None, lang="en"):
         title = _t("💧 Phosphate (PO₄³⁻)", "💧 फ़ॉस्फेट (PO₄³⁻)", "💧 फास्फेट् (PO₄³⁻)", lang,
                    mr="💧 फॉस्फेट (PO₄³⁻)")
         paragraph = _t(
-            f"{emoji} Your <b>{value:,.3f} kg PO₄/ha</b> runoff fuels <b>algal blooms</b> in ponds and irrigation tanks once concentrations exceed <b>0.1 mg P/L</b>, killing fish through oxygen depletion. Apply DAP only at recommended rates with band placement, never just before predicted rainfall.",
-            f"{emoji} आपका <b>{value:,.3f} kg PO₄/ha</b> runoff तालाबों में <b>algal blooms</b> पैदा करता है जब P >0.1 mg/L हो — मछलियाँ ऑक्सीजन की कमी से मरती हैं। DAP केवल अनुशंसित मात्रा में, band placement से डालें, बारिश से पहले कभी नहीं।",
-            f"{emoji} मी <b>{value:,.3f} kg PO₄/ha</b> runoff चेरुवुल्लो <b>algal blooms</b> कु दारितीस्तुंदि (P >0.1 mg/L वद्द) — चेपलु आक्सिजन् लेक चनिपोतायि. DAP नु सिफारसु चेसिन मोतादुलो band placement तो मात्रमे वेयंडि, वर्षानिकि मुंदु ऎप्पुडू वेयॊद्दु.",
+            f"{emoji} Your <b>{value:,.3f} kg PO₄/ha</b> runoff fuels <b>algal blooms</b> in ponds and irrigation tanks once concentrations exceed <b>0.1 mg P/L</b>, killing fish through oxygen depletion. Apply DAP only at recommended rates with <b>band placement (cuts P runoff by 40–60%)</b>, never just before predicted rainfall, and add 5 t/ha FYM to substitute <b>~25%</b> of synthetic P needs.",
+            f"{emoji} आपका <b>{value:,.3f} kg PO₄/ha</b> runoff तालाबों में <b>algal blooms</b> पैदा करता है जब P >0.1 mg/L हो — मछलियाँ ऑक्सीजन की कमी से मरती हैं। DAP केवल अनुशंसित मात्रा में, <b>band placement (P runoff 40–60% कम)</b> से डालें, बारिश से पहले कभी नहीं, और 5 t/ha FYM से <b>~25%</b> सिंथेटिक P की जगह लें।",
+            f"{emoji} मी <b>{value:,.3f} kg PO₄/ha</b> runoff चेरुवुल्लो <b>algal blooms</b> कु दारितीस्तुंदि (P >0.1 mg/L वद्द) — चेपलु आक्सिजन् लेक चनिपोतायि. DAP नु सिफारसु चेसिन मोतादुलो <b>band placement (P runoff 40–60% तग्गिंपु)</b> तो मात्रमे वेयंडि, वर्षानिकि मुंदु ऎप्पुडू वेयॊद्दु, 5 t/ha FYM तो <b>~25%</b> synthetic P नु भर्ती चेयंडि.",
             lang,
-            mr=f"{emoji} तुमचा <b>{value:,.3f} kg PO₄/ha</b> runoff तळ्यांमध्ये P >0.1 mg/L झाल्यावर <b>शैवाळ फुलोरा (algal blooms)</b> निर्माण करतो — मासे ऑक्सिजनच्या कमतरतेने मरतात. DAP फक्त शिफारस केलेल्या प्रमाणात, band placement ने द्या; पावसाआधी कधीच टाकू नका.")
+            mr=f"{emoji} तुमचा <b>{value:,.3f} kg PO₄/ha</b> runoff तळ्यांमध्ये P >0.1 mg/L झाल्यावर <b>शैवाळ फुलोरा (algal blooms)</b> निर्माण करतो — मासे ऑक्सिजनच्या कमतरतेने मरतात. DAP फक्त शिफारस केलेल्या प्रमाणात, <b>band placement (P runoff 40–60% कमी)</b> ने द्या; पावसाआधी कधीच टाकू नका, आणि 5 t/ha शेणखताने <b>~25%</b> synthetic P बदला.")
         refs = cite("who_no3", "salca")
 
     elif domain == "ecotox":
@@ -1695,11 +1695,11 @@ def build_inference_card(domain, value, ctx=None, lang="en"):
         zn_note_te = f" मी Zn input {zn:.0f} kg/ha — " + ("सुरक्षित स्थायिलो." if zn <= 20 else "<b>20 kg/ha कंटे ऎक्कुव</b>; soil-test लो deficiency निर्धारिस्ते तप्प तग्गिंचंडि.")
         zn_note_mr = f" तुमचा Zn input {zn:.0f} kg/ha — " + ("सुरक्षित पातळीवर." if zn <= 20 else "<b>20 kg/ha पेक्षा जास्त</b>; soil-test मध्ये कमतरता सिद्ध झाल्याशिवाय कमी करा.")
         paragraph = _t(
-            f"{emoji} Your soil ecotoxicity score of <b>{value:,.0f} CTUe</b> is driven mostly by Zinc — Zn alone is 612.9 CTUe/kg vs only 2.7–5.2 for N, P, K.{zn_note_en} Split Zn applications with FYM rather than concentrated dose.",
-            f"{emoji} आपका मिट्टी ecotoxicity स्कोर <b>{value:,.0f} CTUe</b> मुख्यतः Zinc से आता है — Zn 612.9 CTUe/kg है vs N, P, K सिर्फ़ 2.7–5.2।{zn_note_hi} Zn को एक साथ नहीं, FYM के साथ split करके दें।",
-            f"{emoji} मी मट्टि ecotoxicity स्कोर् <b>{value:,.0f} CTUe</b> मुख्यंगा Zinc वल्ल — Zn अनेदि 612.9 CTUe/kg vs N, P, K केवलं 2.7–5.2.{zn_note_te} Zn नु ओकेसारि काकुंडा FYM तो splits लो वेयंडि.",
+            f"{emoji} Your soil ecotoxicity score of <b>{value:,.0f} CTUe</b> is driven mostly by Zinc — Zn alone is <b>~120× more toxic per kg</b> than N, P, K (612.9 vs 2.7–5.2 CTUe/kg).{zn_note_en} Split Zn applications with FYM rather than concentrated dose — this can <b>cut ecotoxicity by 40–60%</b>, and substituting 5 t/ha FYM for synthetic Zn delivers another <b>~20%</b> reduction.",
+            f"{emoji} आपका मिट्टी ecotoxicity स्कोर <b>{value:,.0f} CTUe</b> मुख्यतः Zinc से आता है — Zn प्रति kg <b>~120× अधिक विषाक्त</b> है N, P, K की तुलना में (612.9 vs 2.7–5.2 CTUe/kg)।{zn_note_hi} Zn को एक साथ नहीं, FYM के साथ split करके दें — इससे <b>ecotoxicity 40–60% कम</b> होती है, और 5 t/ha FYM से synthetic Zn बदलने पर <b>~20%</b> और कमी।",
+            f"{emoji} मी मट्टि ecotoxicity स्कोर् <b>{value:,.0f} CTUe</b> मुख्यंगा Zinc वल्ल — Zn प्रति kg <b>~120× ऎक्कुव विषपूरितं</b> N, P, K कंटे (612.9 vs 2.7–5.2 CTUe/kg).{zn_note_te} Zn नु ओकेसारि काकुंडा FYM तो splits लो वेयंडि — दीनितो <b>ecotoxicity 40–60% तग्गुतुंदि</b>, 5 t/ha FYM तो synthetic Zn भर्ती चेस्ते मरो <b>~20%</b> तग्गिंपु.",
             lang,
-            mr=f"{emoji} तुमच्या मातीचा ecotoxicity स्कोर <b>{value:,.0f} CTUe</b> मुख्यतः Zinc मुळे — Zn एकटाच 612.9 CTUe/kg vs N, P, K फक्त 2.7–5.2.{zn_note_mr} Zn एकाच वेळी न देता शेणखतासोबत splits मध्ये द्या.")
+            mr=f"{emoji} तुमच्या मातीचा ecotoxicity स्कोर <b>{value:,.0f} CTUe</b> मुख्यतः Zinc मुळे — Zn प्रति kg <b>~120× जास्त विषारी</b> आहे N, P, K च्या तुलनेत (612.9 vs 2.7–5.2 CTUe/kg).{zn_note_mr} Zn एकाच वेळी न देता शेणखतासोबत splits मध्ये द्या — यामुळे <b>ecotoxicity 40–60% कमी</b> होते, आणि 5 t/ha शेणखताने synthetic Zn बदलल्यास आणखी <b>~20%</b> कपात.")
         refs = cite("salca", "icar_inm")
 
     elif domain == "credits":
@@ -2793,7 +2793,7 @@ with tab4:
                 tooltip=["Emission", alt.Tooltip("Value:Q", format=",.3f")]
             ).properties(height=340, width=520)
             st.altair_chart(style_chart(bar_chart), use_container_width=True)
-            st.caption("📊 **Emission Magnitude Bars** — absolute kg/ha of each gas/leachate emitted this season. Useful to spot the largest single source.")
+            st.caption("📊 **Emission Magnitude Bars** — absolute kg/ha emission of gas or leached this season. Useful to spot the largest single source.")
         
         with col_chart2:
             st.markdown("**Emission Share (%)**")
